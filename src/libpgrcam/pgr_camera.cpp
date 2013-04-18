@@ -36,8 +36,8 @@
 
 // The following macro makes the source easier to read as it's not 66% error handling!
 #define PGRERROR_OK FlyCapture2::PGRERROR_OK
-#define PRINT_ERROR_AND_RETURN_FALSE {ROS_ERROR(error.GetDescription()); return false;}
-#define PRINT_ERROR {ROS_ERROR(error.GetDescription());}
+#define PRINT_ERROR_AND_RETURN_FALSE {ROS_ERROR("%s", error.GetDescription()); return false;}
+#define PRINT_ERROR {ROS_ERROR("%s", error.GetDescription());}
 
 namespace pgr_camera
 {
@@ -51,7 +51,7 @@ void init()
   for (int tries = 0; tries < 5; ++tries)
   {
     if ((error = busMgr.GetNumOfCameras(&cameraNum)) != PGRERROR_OK)
-      ROS_ERROR (error.GetDescription ());
+      ROS_ERROR ("%s", error.GetDescription ());
     if (cameraNum)
     {
       ROS_INFO ("Found %d cameras", cameraNum);
@@ -59,7 +59,7 @@ void init()
       for (unsigned int i = 0; i < cameraNum; i++)
       {
         if ((error = busMgr.GetCameraSerialNumberFromIndex(i, &serNo)) != PGRERROR_OK)
-          ROS_ERROR (error.GetDescription ());
+          ROS_ERROR ("%s", error.GetDescription ());
         else
           ROS_INFO ("Camera %u: S/N %u", i, serNo);
       }
@@ -111,7 +111,7 @@ bool Camera::setup()
   FlyCapture2::PGRGuid guid;
   unsigned int N;
   if ((error = busMgr.GetNumOfCameras(&N)) != PGRERROR_OK)
-    ROS_ERROR (error.GetDescription ());
+    ROS_ERROR ("%s", error.GetDescription ());
   if (camSerNo == 0)
   {
     if ((error = busMgr.GetCameraFromIndex(camIndex, &guid)) != PGRERROR_OK)
@@ -170,7 +170,7 @@ void Camera::initCam()
   ROS_INFO ("Setting video mode to VIDEOMODE_640x480Y8, framerate to FRAMERATE_30...");
   if ((error = camPGR.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_640x480Y8, FlyCapture2::FRAMERATE_30))
       != PGRERROR_OK)
-    ROS_ERROR (error.GetDescription ());
+    ROS_ERROR ("%s", error.GetDescription ());
   else
     ROS_INFO ("...success");
   FlyCapture2::EmbeddedImageInfo embedInfo;
@@ -199,7 +199,7 @@ void Camera::start()
 
   if ((error = camPGR.StartCapture(frameDone, (void *)this)) != PGRERROR_OK)
   { //frameDone, (void*) this)) != PGRERROR_OK) {
-    ROS_ERROR (error.GetDescription ());
+    ROS_ERROR ("%s", error.GetDescription ());
   }
   else
   {
@@ -273,6 +273,7 @@ void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, s
       }
       break;
     default:
+      unknown = true;
       break;
   }
 
@@ -317,7 +318,7 @@ void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, s
       width, height, format.c_str (), rate);
   if ((error = camPGR.SetVideoModeAndFrameRate(vidMode, frameRate)) != PGRERROR_OK)
   {
-    ROS_ERROR (error.GetDescription ());
+    ROS_ERROR ("%s", error.GetDescription ());
     ROS_ERROR ("Video mode and frame rate not set");
     ROS_ERROR ("vidMode = %u", vidMode);
     return;
@@ -332,7 +333,7 @@ void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, s
   prop.absValue = rate;
   if ((error = camPGR.SetProperty(&prop)) != PGRERROR_OK)
   {
-    ROS_ERROR (error.GetDescription ());
+    ROS_ERROR ("%s", error.GetDescription ());
   }
 
 }
@@ -347,7 +348,7 @@ void Camera::SetExposure(bool _auto, bool onoff, unsigned int value)
   prop.valueA = value;
   if ((error = camPGR.SetProperty(&prop)) != PGRERROR_OK)
   {
-    ROS_ERROR (error.GetDescription ());
+    ROS_ERROR ("%s", error.GetDescription ());
   }
 }
 
@@ -361,7 +362,7 @@ void Camera::SetGain(bool _auto, float value)
   prop.absValue = value;
   if ((error = camPGR.SetProperty(&prop)) != PGRERROR_OK)
   {
-    ROS_ERROR (error.GetDescription ());
+    ROS_ERROR ("%s", error.GetDescription ());
   }
 
   return;
@@ -378,7 +379,7 @@ void Camera::SetShutter (bool _auto, float value)
   prop.absValue = value;
   if ((error = camPGR.SetProperty(&prop)) != PGRERROR_OK)
   {
-    ROS_ERROR (error.GetDescription ());
+    ROS_ERROR ("%s", error.GetDescription ());
   }
 
   return;
