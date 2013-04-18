@@ -19,7 +19,6 @@
 	<depend package="driver_base" />
 	<depend package="dynamic_reconfigure" />
 	<depend package="camera_calibration_parsers" />
-	<depend package="polled_camera" />
 	<export>
 		<rosdoc config="rosdoc.yaml" />
 	</export>

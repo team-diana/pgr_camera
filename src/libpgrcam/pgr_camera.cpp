@@ -36,36 +36,32 @@
 
 static bool check_success(FlyCapture2::Error error) {
     if(error != FlyCapture2::PGRERROR_OK) {
-        ROS_ERROR ("%s", error.GetDescription ());
+        ROS_ERROR ("%s", error.GetDescription());
         return false;
     }
     return true;
+}
+static void throw_if_error(FlyCapture2::Error error) {
+    if(error != FlyCapture2::PGRERROR_OK) {
+        throw runtime_error(error.GetDescription());
+    }
 }
 
 namespace pgr_camera
 {
 
-static unsigned int cameraNum = 0;
-
-void init()
+void printCameras()
 {
   FlyCapture2::BusManager busMgr;
-  for (int tries = 0; tries < 5; ++tries)
+  unsigned int cameraNum;
+  if(!check_success(busMgr.GetNumOfCameras(&cameraNum))) return;
+  ROS_INFO ("Found %d cameras", cameraNum);
+  for (unsigned int i = 0; i < cameraNum; i++)
   {
-    check_success(busMgr.GetNumOfCameras(&cameraNum));
-    if (cameraNum)
-    {
-      ROS_INFO ("Found %d cameras", cameraNum);
-      for (unsigned int i = 0; i < cameraNum; i++)
-      {
-        unsigned int serNo;
-        if(check_success(busMgr.GetCameraSerialNumberFromIndex(i, &serNo))) {
-          ROS_INFO ("Camera %u: S/N %u", i, serNo);
-        }
-      }
+    unsigned int serNo;
+    if(check_success(busMgr.GetCameraSerialNumberFromIndex(i, &serNo))) {
+      ROS_INFO ("Camera %u: S/N %u", i, serNo);
     }
-    return;
-    usleep(200000);
   }
 }
 
@@ -84,45 +80,18 @@ void frameDone(FlyCapture2::Image * frame, const void *pCallbackData)
   camPtr->userCallback_(frame);
   //ROS_INFO("in frameDone");
 }
-
-size_t numCameras()
+Camera::Camera() : frameRate(FlyCapture2::FRAMERATE_30)
 {
-  return cameraNum;
-}
-
-Camera::Camera()
-{
-  Camera(0);
-}
-
-Camera::Camera(unsigned int serNo) :
-  camIndex(0), camSerNo(serNo), frameRate(FlyCapture2::FRAMERATE_30)
-{
-  setup();
-}
-
-bool Camera::setup()
-{
-  ///////////////////////////////////////////////////////
-  // Get a camera:
   FlyCapture2::BusManager busMgr;
-  unsigned int N;
-  check_success(busMgr.GetNumOfCameras(&N));
-  if (camSerNo == 0)
-  {
-    FlyCapture2::PGRGuid guid;
-    if(!check_success(busMgr.GetCameraFromIndex(camIndex, &guid))) return false;
-    ROS_INFO ("did busMgr.GetCameraFromIndex(0, &guid)");
-  }
-  else
-  {
-    FlyCapture2::PGRGuid guid;
-    if(!check_success(busMgr.GetCameraFromSerialNumber(camSerNo, &guid))) return false;
-  }
-  ROS_INFO ("Setup check_successful");
-  return true;
-
+  throw_if_error(busMgr.GetCameraFromIndex(0, &guid));
 }
+
+Camera::Camera(unsigned int serNo) : frameRate(FlyCapture2::FRAMERATE_30)
+{
+  FlyCapture2::BusManager busMgr;
+  throw_if_error(busMgr.GetCameraFromSerialNumber(serNo, &guid));
+}
+
 
 void Camera::setFrameCallback(boost::function<void(FlyCapture2::Image *)> callback)
 {
@@ -133,10 +102,6 @@ void Camera::setFrameCallback(boost::function<void(FlyCapture2::Image *)> callba
 
 void Camera::initCam()
 {
-  FlyCapture2::BusManager busMgr;
-
-  FlyCapture2::PGRGuid guid;
-  check_success(busMgr.GetCameraFromIndex(0, &guid));
   ROS_INFO ("Camera GUID = %u %u %u %u", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
 
   check_success(camPGR.Connect(&guid));
@@ -158,7 +123,7 @@ void Camera::initCam()
   
   ROS_INFO ("Setting video mode to VIDEOMODE_640x480Y8, framerate to FRAMERATE_30...");
   if(check_success(camPGR.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_640x480Y8, FlyCapture2::FRAMERATE_30))) {
-    ROS_INFO ("...check_success");
+    ROS_INFO ("...success");
   }
   
   FlyCapture2::EmbeddedImageInfo embedInfo;
@@ -200,95 +165,25 @@ void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, s
   using namespace FlyCapture2;
   ROS_INFO_STREAM("Requested Width: " << width << " Height: " << height << " Format: '" << format <<"'");
   
-  bool unknown = false;
   VideoMode vidMode;
-  FrameRate frameRate;
-  switch (width)
-  {
-    case 640:
-      ROS_INFO("Height: %d",height);
-      switch (height)
-      {
-        case 480:
-          if (format == "Y8")
-            vidMode = VIDEOMODE_640x480Y8;
-          else if (format == "Y16")
-            vidMode = VIDEOMODE_640x480Y16;
-          else if (format == "RGB")
-            vidMode = VIDEOMODE_640x480RGB;
-          else {
-            unknown = true;
-            }
-          break;
-        default:
-          unknown = true;
-          break;
-      }
-      break;
-    case 1280:
-      switch (height)
-      {
-        case 960:
-          if (format == "Y8")
-          {
-            vidMode = VIDEOMODE_1280x960Y8;
-          }
-          else if (format == "Y16")
-          {
-            vidMode = VIDEOMODE_1280x960Y16;
-          }
-          else if (format == "RGB")
-          {
-            vidMode = VIDEOMODE_1280x960RGB;
-          }
-          else {
-            unknown = true;
-          }
-          break;
-        default:
-          unknown = true;
-          break;
-      }
-      break;
-    default:
-      unknown = true;
-      break;
-  }
-
-  if (unknown)
-  {
-    ROS_ERROR ("Unknown/unsupported video mode - mode not set");
-    return;
-  }
+       if(width==640  && height==480 && format=="Y8" ) vidMode = VIDEOMODE_640x480Y8;
+  else if(width==640  && height==480 && format=="Y16") vidMode = VIDEOMODE_640x480Y16;
+  else if(width==640  && height==480 && format=="RGB") vidMode = VIDEOMODE_640x480RGB;
+  else if(width==1280 && height==960 && format=="Y8" ) vidMode = VIDEOMODE_1280x960Y8;
+  else if(width==1280 && height==960 && format=="Y16") vidMode = VIDEOMODE_1280x960Y16;
+  else if(width==1280 && height==960 && format=="RGB") vidMode = VIDEOMODE_1280x960RGB;
+  else { ROS_ERROR ("Unknown/unsupported video mode - mode not set"); return; }
 
   // The following hardcoded numbers are from testing with
   // a FireflyMV USB (mono) camera using FlyCap2's configuration GUI
   // TODO: determine whether they are camera specific and if so, so this a better way..
-  if (format == "FORMAT7")
-  {
-    frameRate = FRAMERATE_FORMAT7;
-  }
-  else if (rate >= 1.151 && rate < 7.606)
-  {
-    frameRate = FRAMERATE_7_5;
-  }
-  else if (rate >= 7.606 && rate < 15.211)
-  {
-    frameRate = FRAMERATE_15;
-  }
-  else if (rate >= 15.211 && rate < 30.430)
-  {
-    frameRate = FRAMERATE_30;
-  }
-  else if (rate >= 30.430 && rate < 60.861)
-  {
-    frameRate = FRAMERATE_60;
-  }
-  else
-  {
-    ROS_ERROR ("Unsupported frame rate");
-    return;
-  }
+  FrameRate frameRate;
+       if (format == "FORMAT7")             frameRate = FRAMERATE_FORMAT7;
+  else if (rate >=  1.151 && rate <  7.606) frameRate = FRAMERATE_7_5;
+  else if (rate >=  7.606 && rate < 15.211) frameRate = FRAMERATE_15;
+  else if (rate >= 15.211 && rate < 30.430) frameRate = FRAMERATE_30;
+  else if (rate >= 30.430 && rate < 60.861) frameRate = FRAMERATE_60;
+  else { ROS_ERROR ("Unsupported frame rate"); return; }
 
   ROS_INFO ("Attempting to set mode for width = %u height = %u format = %s frame_rate = %f",
       width, height, format.c_str(), rate);

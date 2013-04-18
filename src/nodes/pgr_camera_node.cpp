@@ -41,7 +41,6 @@
 #include <image_transport/image_transport.h>
 #include <camera_calibration_parsers/parse_ini.h>
 #include <std_msgs/String.h>
-#include <polled_camera/publication_server.h>
 #include <pgr_camera/pgr_camera.h>
 
 // Dynamic reconfigure
@@ -64,37 +63,38 @@ private:
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   image_transport::CameraPublisher streaming_pub_;
-  polled_camera::PublicationServer poll_srv_;
   ros::ServiceServer set_camera_info_srv_;
+  dynamic_reconfigure::Server < pgr_camera::PGRCameraConfig > reconfigure_srv_;
 
   // Camera
   boost::scoped_ptr < pgr_camera::Camera > cam_;
   bool running;
 
   // ROS messages
-    sensor_msgs::Image img_;
-    sensor_msgs::CameraInfo cam_info_;
-
-  // Diagnostics
-  int count_;
+  sensor_msgs::CameraInfo cam_info_;
 
 public:
-    PGRCameraNode (const ros::NodeHandle & node_handle):nh_ (node_handle), it_ (nh_), cam_ (NULL), running (false),
-    count_ (0)
+    PGRCameraNode (const ros::NodeHandle & node_handle):nh_ (node_handle), it_ (nh_), cam_ (NULL), running (false)
   {
     // Two-stage initialization: in the constructor we open the requested camera. Most
     // parameters controlling capture are set and streaming started in configure(), the
     // callback to dynamic_reconfig.
-    pgr_camera::init ();
-    if (pgr_camera::numCameras () == 0)
-      ROS_WARN ("Found no cameras");
+    pgr_camera::printCameras();
 
-    //ros::NodeHandle local_nh("~");
+    ros::NodeHandle local_nh("~");
 
     // TODO: add facility to set intrinsics
 
-    cam_.reset (new pgr_camera::Camera ());
+    int serNo;
+    if(local_nh.getParam("serial_number", serNo)) {
+        cam_.reset (new pgr_camera::Camera (serNo));
+    } else {
+        cam_.reset (new pgr_camera::Camera ());
+    }
     cam_->initCam ();
+    
+    
+    reconfigure_srv_.setCallback (boost::bind (&PGRCameraNode::configure, this, _1, _2));
   }
 
   void configure (pgr_camera::PGRCameraConfig & config, uint32_t level)
@@ -132,22 +132,18 @@ public:
     else
       cam_->SetShutter (false, (float)config.shutter);
     
-
     // Gain
     if(config.auto_gain)
       cam_->SetGain(true);
     else
       cam_->SetGain(false, (float)config.gain);
 
-
-
-
     // video mode / framerate
     cam_->SetVideoModeAndFramerate (config.width, config.height, config.format, config.frame_rate);
 
     
     // TF frame
-    img_.header.frame_id = cam_info_.header.frame_id = config.frame_id;
+    cam_info_.header.frame_id = config.frame_id;
 
     if (level >= (uint32_t) driver_base::SensorLevels::RECONFIGURE_STOP)
       start ();
@@ -176,83 +172,61 @@ public:
       return;
 
     cam_->stop ();              // Must stop camera before streaming_pub_.
-    poll_srv_.shutdown ();
     streaming_pub_.shutdown ();
 
     running = false;
   }
 
-  static bool frameToImage (FlyCapture2::Image * frame, sensor_msgs::Image & image)
+  void publishImage (FlyCapture2::Image * frame)
   {
-
-    // NOTE: 16-bit and Yuv formats not supported
-    static const char *BAYER_ENCODINGS[] = { "none", "bayer_rggb8",
-      "bayer_grbg8", "bayer_gbrg8", "bayer_bggr8", "unknown"
-    };
-    std::string encoding;
-
-    //unsigned int bpp = frame->GetBitsPerPixel();
-    FlyCapture2::BayerTileFormat bayerFmt;
-    bayerFmt = frame->GetBayerTileFormat ();
-    //ROS_INFO("bayer is %u", bayerFmt);
-    if (bayerFmt == FlyCapture2::NONE)
-    {
-      encoding = sensor_msgs::image_encodings::MONO8;
-    }
-    else
-    {
-      encoding = BAYER_ENCODINGS[bayerFmt];
-    }
-
-    //uint32_t step = frame->GetDataSize() / frame->GetRows(); // TODO: really need to compute this every time?
-    return sensor_msgs::fillImage (image, encoding, frame->GetRows (),
-                                   frame->GetCols (), frame->GetStride (), frame->GetData ());
-  }
-
-  bool processFrame (FlyCapture2::Image * frame, sensor_msgs::Image & img, sensor_msgs::CameraInfo & cam_info)
-  {
+    sensor_msgs::Image img;
+    sensor_msgs::CameraInfo cam_info(cam_info_);
+    
     /// @todo Use time from frame?
     img.header.stamp = cam_info.header.stamp = ros::Time::now ();
+    img.header.frame_id = cam_info.header.frame_id;
 
-    if (!frameToImage (frame, img))
-      return false;
+    //unsigned int bpp = frame->GetBitsPerPixel();
+    
+    std::string encoding;
+    switch(frame->GetBayerTileFormat ()) {
+      case FlyCapture2::NONE: encoding = sensor_msgs::image_encodings::MONO8      ; break;
+      case FlyCapture2::RGGB: encoding = sensor_msgs::image_encodings::BAYER_RGGB8; break;
+      case FlyCapture2::GRBG: encoding = sensor_msgs::image_encodings::BAYER_GRBG8; break;
+      case FlyCapture2::GBRG: encoding = sensor_msgs::image_encodings::BAYER_GBRG8; break;
+      case FlyCapture2::BGGR: encoding = sensor_msgs::image_encodings::BAYER_BGGR8; break;
+      default: ROS_ERROR("unknown BayerTileFormat"); return;
+    }
+
+    if(!sensor_msgs::fillImage (img, encoding, frame->GetRows (),
+          frame->GetCols (), frame->GetStride (), frame->GetData ())) {
+      ROS_ERROR("fillImage failed");
+      return;
+    }
     cam_info.height = img.height;
     cam_info.width = img.width;
-    //frame->GetDimensions(&cam_info.height, &cam_info.width);
-    //cam_info.width = frame->GetCols();
-    //
     //              cam_info.roi.x_offset = frame->RegionX;
     //              cam_info.roi.y_offset = frame->RegionY;
     //              cam_info.roi.height = frame->Height;
     //              cam_info.roi.width = frame->Width;
 
-    count_++;
-    //ROS_INFO("count = %d", count_);
-    return true;
-  }
-
-  void publishImage (FlyCapture2::Image * frame)
-  {
-    if (processFrame (frame, img_, cam_info_))
-      streaming_pub_.publish (img_, cam_info_);
+    streaming_pub_.publish (img, cam_info);
   }
 
   void loadIntrinsics (string inifile, string camera_name)
   {
     // Read in calibration file
     ifstream fin (inifile.c_str ());
-    if (fin.is_open ())
-    {
-      fin.close ();
-      if (camera_calibration_parsers::readCalibrationIni (inifile, camera_name, cam_info_))
-        ROS_INFO ("Loaded calibration for camera '%s'", camera_name.c_str ());
-      else
-        ROS_WARN ("Failed to load intrinsics from camera");
-    }
-    else
+    if (!fin.is_open ())
     {
       ROS_WARN ("Intrinsics file not found: %s", inifile.c_str ());
+      return;
     }
+    fin.close ();
+    if (camera_calibration_parsers::readCalibrationIni (inifile, camera_name, cam_info_))
+      ROS_INFO ("Loaded calibration for camera '%s'", camera_name.c_str ());
+    else
+      ROS_WARN ("Failed to load intrinsics file");
   }
 
 };
@@ -262,16 +236,10 @@ main (int argc, char **argv)
 {
   ros::init (argc, argv, "pgr_camera");
 
-  typedef dynamic_reconfigure::Server < pgr_camera::PGRCameraConfig > Server;
-  Server server;
-
   try
   {
     ros::NodeHandle nh ("camera");
-    boost::shared_ptr < PGRCameraNode > pn (new PGRCameraNode (nh));
-
-    Server::CallbackType f = boost::bind (&PGRCameraNode::configure, pn, _1, _2);
-    server.setCallback (f);
+    PGRCameraNode pn(nh);
 
     ros::spin ();
 

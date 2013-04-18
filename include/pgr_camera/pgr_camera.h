@@ -46,8 +46,7 @@ using namespace std;
 namespace pgr_camera
 {
 
-  void init ();
-  size_t numCameras ();
+  void printCameras();
 
   class Camera
   {
@@ -71,11 +70,10 @@ namespace pgr_camera
       boost::mutex frameMutex_;
 
   private:
-    int camIndex;
-    unsigned int camSerNo;
-      FlyCapture2::Camera camPGR;
-      FlyCapture2::Image rawPGRImage;
-      FlyCapture2::FrameRate frameRate;
+    FlyCapture2::PGRGuid guid;
+    FlyCapture2::Camera camPGR;
+    FlyCapture2::Image rawPGRImage;
+    FlyCapture2::FrameRate frameRate;
     bool setup ();
 
   };
