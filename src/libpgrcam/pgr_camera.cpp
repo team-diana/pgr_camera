@@ -34,10 +34,13 @@
 
 #include "pgr_camera/pgr_camera.h"
 
-// The following macro makes the source easier to read as it's not 66% error handling!
-#define PGRERROR_OK FlyCapture2::PGRERROR_OK
-#define PRINT_ERROR_AND_RETURN_FALSE {ROS_ERROR("%s", error.GetDescription()); return false;}
-#define PRINT_ERROR {ROS_ERROR("%s", error.GetDescription());}
+static bool check_success(FlyCapture2::Error error) {
+    if(error != FlyCapture2::PGRERROR_OK) {
+        ROS_ERROR ("%s", error.GetDescription ());
+        return false;
+    }
+    return true;
+}
 
 namespace pgr_camera
 {
@@ -46,22 +49,19 @@ static unsigned int cameraNum = 0;
 
 void init()
 {
-  FlyCapture2::Error error;
   FlyCapture2::BusManager busMgr;
   for (int tries = 0; tries < 5; ++tries)
   {
-    if ((error = busMgr.GetNumOfCameras(&cameraNum)) != PGRERROR_OK)
-      ROS_ERROR ("%s", error.GetDescription ());
+    check_success(busMgr.GetNumOfCameras(&cameraNum));
     if (cameraNum)
     {
       ROS_INFO ("Found %d cameras", cameraNum);
-      unsigned int serNo;
       for (unsigned int i = 0; i < cameraNum; i++)
       {
-        if ((error = busMgr.GetCameraSerialNumberFromIndex(i, &serNo)) != PGRERROR_OK)
-          ROS_ERROR ("%s", error.GetDescription ());
-        else
+        unsigned int serNo;
+        if(check_success(busMgr.GetCameraSerialNumberFromIndex(i, &serNo))) {
           ROS_INFO ("Camera %u: S/N %u", i, serNo);
+        }
       }
     }
     return;
@@ -73,17 +73,16 @@ void init()
 void frameDone(FlyCapture2::Image * frame, const void *pCallbackData)
 {
   Camera *camPtr = (Camera *)pCallbackData;
-  if (!camPtr->userCallback_.empty())
-  {
-    // TODO: thread safety OK here?
-    boost::lock_guard<boost::mutex> guard(camPtr->frameMutex_);
-    camPtr->userCallback_(frame);
-    //ROS_INFO("in frameDone");
-  }
-  else
+  if (camPtr->userCallback_.empty())
   {
     ROS_WARN ("User callback empty!");
+    return;
   }
+  
+  // TODO: thread safety OK here?
+  boost::lock_guard<boost::mutex> guard(camPtr->frameMutex_);
+  camPtr->userCallback_(frame);
+  //ROS_INFO("in frameDone");
 }
 
 size_t numCameras()
@@ -106,24 +105,21 @@ bool Camera::setup()
 {
   ///////////////////////////////////////////////////////
   // Get a camera:
-  FlyCapture2::Error error;
   FlyCapture2::BusManager busMgr;
-  FlyCapture2::PGRGuid guid;
   unsigned int N;
-  if ((error = busMgr.GetNumOfCameras(&N)) != PGRERROR_OK)
-    ROS_ERROR ("%s", error.GetDescription ());
+  check_success(busMgr.GetNumOfCameras(&N));
   if (camSerNo == 0)
   {
-    if ((error = busMgr.GetCameraFromIndex(camIndex, &guid)) != PGRERROR_OK)
-      PRINT_ERROR_AND_RETURN_FALSE;
+    FlyCapture2::PGRGuid guid;
+    if(!check_success(busMgr.GetCameraFromIndex(camIndex, &guid))) return false;
     ROS_INFO ("did busMgr.GetCameraFromIndex(0, &guid)");
   }
   else
   {
-    if ((error = busMgr.GetCameraFromSerialNumber(camSerNo, &guid)) != PGRERROR_OK)
-      PRINT_ERROR_AND_RETURN_FALSE;
+    FlyCapture2::PGRGuid guid;
+    if(!check_success(busMgr.GetCameraFromSerialNumber(camSerNo, &guid))) return false;
   }
-  ROS_INFO ("Setup successful");
+  ROS_INFO ("Setup check_successful");
   return true;
 
 }
@@ -137,59 +133,47 @@ void Camera::setFrameCallback(boost::function<void(FlyCapture2::Image *)> callba
 
 void Camera::initCam()
 {
-  // Start capturing images:
-  FlyCapture2::Error error;
   FlyCapture2::BusManager busMgr;
+
   FlyCapture2::PGRGuid guid;
-
-  if ((error = busMgr.GetCameraFromIndex(0, &guid)) != PGRERROR_OK)
-    PRINT_ERROR;
-
-  if ((error = camPGR.Connect(&guid)) != PGRERROR_OK)
-    PRINT_ERROR;
+  check_success(busMgr.GetCameraFromIndex(0, &guid));
   ROS_INFO ("Camera GUID = %u %u %u %u", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
+
+  check_success(camPGR.Connect(&guid));
 
   // Set to software triggering:
   FlyCapture2::TriggerMode triggerMode;
-  if ((error = camPGR.GetTriggerMode(&triggerMode)) != PGRERROR_OK)
-    PRINT_ERROR;
+  check_success(camPGR.GetTriggerMode(&triggerMode));
 
   // Set camera to trigger mode 0
   triggerMode.onOff = false;
 
-  if ((error = camPGR.SetTriggerMode(&triggerMode)) != PGRERROR_OK)
-    PRINT_ERROR;
+  check_success(camPGR.SetTriggerMode(&triggerMode));
 
   // Set other camera configuration stuff:
   FlyCapture2::FC2Config fc2Config;
-  if ((error = camPGR.GetConfiguration(&fc2Config)) != PGRERROR_OK)
-    PRINT_ERROR;
+  check_success(camPGR.GetConfiguration(&fc2Config));
   fc2Config.grabMode = FlyCapture2::DROP_FRAMES; // supposedly the default, but just in case..
-  if ((error = camPGR.SetConfiguration(&fc2Config)) != PGRERROR_OK)
-    PRINT_ERROR;
+  check_success(camPGR.SetConfiguration(&fc2Config));
+  
   ROS_INFO ("Setting video mode to VIDEOMODE_640x480Y8, framerate to FRAMERATE_30...");
-  if ((error = camPGR.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_640x480Y8, FlyCapture2::FRAMERATE_30))
-      != PGRERROR_OK)
-    ROS_ERROR ("%s", error.GetDescription ());
-  else
-    ROS_INFO ("...success");
+  if(check_success(camPGR.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_640x480Y8, FlyCapture2::FRAMERATE_30))) {
+    ROS_INFO ("...check_success");
+  }
+  
   FlyCapture2::EmbeddedImageInfo embedInfo;
   embedInfo.frameCounter.onOff = true;
-  if ((error = camPGR.SetEmbeddedImageInfo(&embedInfo)) != PGRERROR_OK)
-    PRINT_ERROR;
+  check_success(camPGR.SetEmbeddedImageInfo(&embedInfo));
 
   FlyCapture2::CameraInfo camInfo;
-  if ((error = camPGR.GetCameraInfo(&camInfo)) != PGRERROR_OK)
-    PRINT_ERROR;
+  check_success(camPGR.GetCameraInfo(&camInfo));
   ROS_INFO ("camInfo.driverName = %s", camInfo.driverName);
   ROS_INFO ("camInfo.firmwareVersion = %s", camInfo.firmwareVersion);
   ROS_INFO ("camInfo.isColorCamera = %d", camInfo.isColorCamera);
-
 }
 
 void Camera::start()
 {
-  FlyCapture2::Error error;
   if (camPGR.IsConnected())
   {
     ROS_INFO ("IsConnected returned true");
@@ -197,12 +181,7 @@ void Camera::start()
   else
     ROS_INFO ("IsConnected returned false");
 
-  if ((error = camPGR.StartCapture(frameDone, (void *)this)) != PGRERROR_OK)
-  { //frameDone, (void*) this)) != PGRERROR_OK) {
-    ROS_ERROR ("%s", error.GetDescription ());
-  }
-  else
-  {
+  if(check_success(camPGR.StartCapture(frameDone, (void *)this))) {
     ROS_INFO ("StartCapture succeeded.");
   }
 
@@ -210,9 +189,7 @@ void Camera::start()
 
 void Camera::stop()
 {
-  FlyCapture2::Error error;
-  if ((error = camPGR.StopCapture()) != PGRERROR_OK)
-    PRINT_ERROR;
+  check_success(camPGR.StopCapture());
 }
 
 void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, string format, double rate)
@@ -221,10 +198,11 @@ void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, s
   // TODO: support colour cameras
   // TODO: support additional modes
   using namespace FlyCapture2;
+  ROS_INFO_STREAM("Requested Width: " << width << " Height: " << height << " Format: '" << format <<"'");
+  
   bool unknown = false;
   VideoMode vidMode;
   FrameRate frameRate;
-  ROS_INFO_STREAM("Requested Width: " << width << " Height: " << height << " Format: '" << format <<"'");
   switch (width)
   {
     case 640:
@@ -283,7 +261,6 @@ void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, s
     return;
   }
 
-  unknown = false;
   // The following hardcoded numbers are from testing with
   // a FireflyMV USB (mono) camera using FlyCap2's configuration GUI
   // TODO: determine whether they are camera specific and if so, so this a better way..
@@ -313,12 +290,10 @@ void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, s
     return;
   }
 
-  Error error;
   ROS_INFO ("Attempting to set mode for width = %u height = %u format = %s frame_rate = %f",
-      width, height, format.c_str (), rate);
-  if ((error = camPGR.SetVideoModeAndFrameRate(vidMode, frameRate)) != PGRERROR_OK)
+      width, height, format.c_str(), rate);
+  if(!check_success(camPGR.SetVideoModeAndFrameRate(vidMode, frameRate)))
   {
-    ROS_ERROR ("%s", error.GetDescription ());
     ROS_ERROR ("Video mode and frame rate not set");
     ROS_ERROR ("vidMode = %u", vidMode);
     return;
@@ -331,58 +306,38 @@ void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, s
   prop.onOff = true;
   prop.absControl = true;
   prop.absValue = rate;
-  if ((error = camPGR.SetProperty(&prop)) != PGRERROR_OK)
-  {
-    ROS_ERROR ("%s", error.GetDescription ());
-  }
-
+  check_success(camPGR.SetProperty(&prop));
 }
 
 void Camera::SetExposure(bool _auto, bool onoff, unsigned int value)
 {
   FlyCapture2::Property prop;
-  FlyCapture2::Error error;
   prop.type = FlyCapture2::AUTO_EXPOSURE;
   prop.autoManualMode = _auto;
   prop.onOff = onoff;
   prop.valueA = value;
-  if ((error = camPGR.SetProperty(&prop)) != PGRERROR_OK)
-  {
-    ROS_ERROR ("%s", error.GetDescription ());
-  }
+  check_success(camPGR.SetProperty(&prop));
 }
 
 void Camera::SetGain(bool _auto, float value)
 {
   FlyCapture2::Property prop;
-  FlyCapture2::Error error;
   prop.type = FlyCapture2::GAIN;
   prop.autoManualMode = _auto;
   prop.onOff = true;
   prop.absValue = value;
-  if ((error = camPGR.SetProperty(&prop)) != PGRERROR_OK)
-  {
-    ROS_ERROR ("%s", error.GetDescription ());
-  }
-
-  return;
+  check_success(camPGR.SetProperty(&prop));
 }
 
 
 void Camera::SetShutter (bool _auto, float value)
 {
   FlyCapture2::Property prop;
-  FlyCapture2::Error error;
   prop.type = FlyCapture2::AUTO_EXPOSURE;
   prop.autoManualMode = _auto;
   prop.onOff = true;
   prop.absValue = value;
-  if ((error = camPGR.SetProperty(&prop)) != PGRERROR_OK)
-  {
-    ROS_ERROR ("%s", error.GetDescription ());
-  }
-
-  return;
+  check_success(camPGR.SetProperty(&prop));
 }
 
 } // namespace pgrcamera
