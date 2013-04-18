@@ -70,7 +70,7 @@ void init()
 }
 
 // FIXME: How to make this a member function?
-void frameDone(FlyCapture2::Image * frame, void *pCallbackData)
+void frameDone(FlyCapture2::Image * frame, const void *pCallbackData)
 {
   Camera *camPtr = (Camera *)pCallbackData;
   if (!camPtr->userCallback_.empty())
