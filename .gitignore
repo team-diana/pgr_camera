@@ -2,3 +2,5 @@ build/
 bin/
 lib/
 *~
+cfg/*cfgc
+src/pgr_camera/__init__.py
