@@ -55,6 +55,7 @@ namespace pgr_camera
     Camera (unsigned int serNo);
 
     void initCam ();
+    std::string getName();
     void start ();
     void stop ();
 //      void frameDone(FlyCapture2::Image *frame, void *pCallbackData);

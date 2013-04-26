@@ -137,6 +137,22 @@ void Camera::initCam()
   ROS_INFO ("camInfo.isColorCamera = %d", camInfo.isColorCamera);
 }
 
+std::string Camera::getName()
+{
+  FlyCapture2::CameraInfo camInfo;
+  check_success(camPGR.GetCameraInfo(&camInfo));
+
+  uint32_t value[3];
+  value[0]= camInfo.configROM.chipIdLo & 0xffffffff;
+  value[1]= camInfo.configROM.chipIdHi & 0xff;
+  value[1] = 1; // pgr drivers don't set chipIdHi properly, apparently. supposed to be 1, is 0
+  value[2]= camInfo.configROM.nodeVendorId & 0xfffff;
+
+  char temp[100];
+  sprintf(temp,"%06x%02x%08x", value[2], value[1], value[0]);
+  return temp;
+}
+
 void Camera::start()
 {
   if (camPGR.IsConnected())

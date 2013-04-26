@@ -39,7 +39,7 @@
 #include <sensor_msgs/fill_image.h>
 #include <sensor_msgs/SetCameraInfo.h>
 #include <image_transport/image_transport.h>
-#include <camera_calibration_parsers/parse_ini.h>
+#include <camera_info_manager/camera_info_manager.h>
 #include <std_msgs/String.h>
 #include <pgr_camera/pgr_camera.h>
 
@@ -65,16 +65,16 @@ private:
   image_transport::CameraPublisher streaming_pub_;
   ros::ServiceServer set_camera_info_srv_;
   dynamic_reconfigure::Server < pgr_camera::PGRCameraConfig > reconfigure_srv_;
+  camera_info_manager::CameraInfoManager cinfo_;
 
+  string frame_id;
+  string camera_info_url_;
   // Camera
   boost::scoped_ptr < pgr_camera::Camera > cam_;
   bool running;
 
-  // ROS messages
-  sensor_msgs::CameraInfo cam_info_;
-
 public:
-    PGRCameraNode (const ros::NodeHandle & node_handle):nh_ (node_handle), it_ (nh_), cam_ (NULL), running (false)
+    PGRCameraNode (const ros::NodeHandle & node_handle):nh_ (node_handle), it_ (nh_), cinfo_(node_handle), cam_ (NULL), running (false)
   {
     // Two-stage initialization: in the constructor we open the requested camera. Most
     // parameters controlling capture are set and streaming started in configure(), the
@@ -92,6 +92,7 @@ public:
         cam_.reset (new pgr_camera::Camera ());
     }
     cam_->initCam ();
+    cinfo_.setCameraName(cam_->getName());
     
     
     reconfigure_srv_.setCallback (boost::bind (&PGRCameraNode::configure, this, _1, _2));
@@ -103,9 +104,21 @@ public:
 
     if (level >= (uint32_t) driver_base::SensorLevels::RECONFIGURE_STOP)
       stop ();
-
-    loadIntrinsics (config.intrinsics_ini, config.camera_name);
-
+    
+    if (camera_info_url_ != config.camera_info_url)
+    {
+      // set the new URL and load CameraInfo (if any) from it
+      if (cinfo_.validateURL(config.camera_info_url))
+        {
+          cinfo_.loadCameraInfo(config.camera_info_url);
+        }
+      else
+        {
+          // new URL not valid, use the old one
+          config.camera_info_url = camera_info_url_;
+        }
+    }
+    
     /* 
      * If Shutter and Gain are both set to auto, then auto exposure
      * will tune each one to maintain a constant exposure at each pixel. 
@@ -143,7 +156,7 @@ public:
 
     
     // TF frame
-    cam_info_.header.frame_id = config.frame_id;
+    frame_id = config.frame_id;
 
     if (level >= (uint32_t) driver_base::SensorLevels::RECONFIGURE_STOP)
       start ();
@@ -152,7 +165,6 @@ public:
   ~PGRCameraNode ()
   {
     stop ();
-    cam_.reset ();
   }
 
   void start ()
@@ -180,11 +192,11 @@ public:
   void publishImage (FlyCapture2::Image * frame)
   {
     sensor_msgs::Image img;
-    sensor_msgs::CameraInfo cam_info(cam_info_);
+    sensor_msgs::CameraInfo cam_info(cinfo_.getCameraInfo());
     
     /// @todo Use time from frame?
     img.header.stamp = cam_info.header.stamp = ros::Time::now ();
-    img.header.frame_id = cam_info.header.frame_id;
+    img.header.frame_id = cam_info.header.frame_id = frame_id;
 
     //unsigned int bpp = frame->GetBitsPerPixel();
     
@@ -211,22 +223,6 @@ public:
     //              cam_info.roi.width = frame->Width;
 
     streaming_pub_.publish (img, cam_info);
-  }
-
-  void loadIntrinsics (string inifile, string camera_name)
-  {
-    // Read in calibration file
-    ifstream fin (inifile.c_str ());
-    if (!fin.is_open ())
-    {
-      ROS_WARN ("Intrinsics file not found: %s", inifile.c_str ());
-      return;
-    }
-    fin.close ();
-    if (camera_calibration_parsers::readCalibrationIni (inifile, camera_name, cam_info_))
-      ROS_INFO ("Loaded calibration for camera '%s'", camera_name.c_str ());
-    else
-      ROS_WARN ("Failed to load intrinsics file");
   }
 
 };

@@ -15,8 +15,6 @@ Locally: Start an image_view and a reconfigure_gui.
 		<param name="height" type="int" value="480" />
 		<param name="format" value="Y8" />
 		<param name="frame_rate" type="int" value="15" />
-		<param name="intrinsics_ini" type="str"
-			value="$(find pgr_camera)/test_intrinsics.ini" />
 		<param name="camera_name" type="str" value="pgr_camera" />
 	</node>
 	<node name="image_view" pkg="image_view" type="image_view"
