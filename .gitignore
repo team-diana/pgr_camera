@@ -6,3 +6,4 @@ cfg/*cfgc
 cfg/cpp/
 src/pgr_camera/__init__.py
 src/*/cfg/
+docs/
