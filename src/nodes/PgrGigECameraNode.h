@@ -8,8 +8,9 @@
 class PgrGigECameraNode : public PgrCameraNode {
 
 public:
-     PgrGigECameraNode ( const ros::NodeHandle& nodeHandle, shared_ptr< PgrCamera > pgrCamera ) : PgrCameraNode(nodeHandle,  pgrCamera) {
-       
+     PgrGigECameraNode ( const ros::NodeHandle& nodeHandle, shared_ptr< pgr_camera::PgrCamera > pgrCamera ) :
+     PgrCameraNode(nodeHandle,  pgrCamera) {
+
     }
      virtual void configure ( pgr_camera::PGRCameraConfig &config, uint32_t level ) ;
 

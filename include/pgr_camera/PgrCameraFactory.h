@@ -6,21 +6,23 @@
 using namespace FlyCapture2;
 using namespace std;
 
-class PgrCameraFactory {
+
+class PgrCameraFactory
+{
 public:
-     PgrCameraFactory ();
+    PgrCameraFactory ();
 
-     int getNumOfAvailableCameras();
+    int getNumOfAvailableCameras();
 
-     shared_ptr<PgrCamera> getCameraFromSerialNumber ( unsigned int serialNumber );
-     shared_ptr<PgrCamera> createGigECamera ( PGRGuid cameraGuid, unsigned int serialNumber);
+    shared_ptr<pgr_camera::PgrCamera> getCameraFromSerialNumber ( unsigned int serialNumber );
+    shared_ptr<pgr_camera::PgrCamera> createGigECamera ( PGRGuid cameraGuid, unsigned int serialNumber );
 
-     virtual ~PgrCameraFactory() {}
+    virtual ~PgrCameraFactory() {}
 
-     static std::string guidToString ( PGRGuid guid );
+    static std::string guidToString ( PGRGuid guid );
 
 private:
-     void printNumOfAvaliableCameras();
+    void printNumOfAvaliableCameras();
 };
 
 #endif                                                      // PGRCAMERAFACTORY_H

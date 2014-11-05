@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pgr_camera)
 
-find_package(catkin REQUIRED COMPONENTS message_generation dynamic_reconfigure roscpp std_msgs dynamic_reconfigure image_transport polled_camera camera_calibration_parsers camera_info_manager)
+find_package(catkin REQUIRED COMPONENTS message_generation dynamic_reconfigure roscpp std_msgs dynamic_reconfigure
+          image_transport polled_camera camera_calibration_parsers camera_info_manager team_diana_lib)
 find_package(Boost REQUIRED COMPONENTS system program_options)
 
-SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -lflycapture -fpermissive" )
+SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -lflycapture -std=c++11 -Wall" )
 
 set(FLYCAPTURE_LIBRARIES "/usr/lib/libflycapture.so")
 set(FLYCAPTURE_INCLUDE_PATH "/usr/include/flycapture")

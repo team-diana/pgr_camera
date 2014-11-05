@@ -10,14 +10,14 @@ using namespace FlyCapture2;
 
 class CameraSynchronizer {
 public:
-     CameraSynchronizer ( vector< boost::shared_ptr< PgrCameraNode > > camerasToSync );
+     CameraSynchronizer ( vector< std::shared_ptr< PgrCameraNode > > camerasToSync );
      virtual ~CameraSynchronizer();
 
 private:
-     boost::mutex masterTimestampMutex;
+     std::mutex masterTimestampMutex;
      ros::Time masterTimestamp;
      void publishSyncImage ( Image* frame, int camIndex );
-     std::map<unsigned int,  boost::shared_ptr<PgrCameraNode> > cameraNodesMap;
+     std::map<unsigned int,  std::shared_ptr<PgrCameraNode> > cameraNodesMap;
      std::vector<bool> cameraDidPublish;
 
      bool allDidPublish() {

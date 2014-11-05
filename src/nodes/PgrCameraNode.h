@@ -38,82 +38,99 @@
 
 typedef dynamic_reconfigure::Server < pgr_camera::PGRCameraConfig > DynamicReconfigureServer;
 
-class PgrCameraNode {
+class PgrCameraNode
+{
+
+    struct DiagnosticsData {
+
+        DiagnosticsData() :
+          frameCount(0),
+          oneshotPublished(false),
+          publishedCount(0),
+          oneshotCount(0),
+          oneshotCountMax(0)
+        {}
+
+        // Diagnostics
+        int frameCount;
+        int oneshotPublished;
+        int publishedCount;
+        int oneshotCount;
+        int oneshotCountMax;
+    };
+
+
+    enum State {
+        SETTING_UP,
+        RUNNING,
+        STOP,
+        ONE_SHOT
+    };
+
 
 public:
-     PgrCameraNode ( const ros::NodeHandle &nodeHandle, shared_ptr<PgrCamera> pgrCamera );
-     ~PgrCameraNode ();
+    PgrCameraNode ( const ros::NodeHandle &nodeHandle, shared_ptr<pgr_camera::PgrCamera> pgrCamera );
+    ~PgrCameraNode ();
 
-     bool isSetupDone();
+    bool isSetupDone();
 
-     DynamicReconfigureServer& getDynamicReconfigureServer();
+    DynamicReconfigureServer& getDynamicReconfigureServer();
 
-     void publishImage ( FlyCapture2::Image *frame, int camIndex );
-     void publishImageWithTimestamp ( FlyCapture2::Image *frame, int camIndex,  ros::Time timestamp );
-     void overrideFrameCallback ( boost::function < void ( FlyCapture2::Image *, unsigned int )  > callback );
-     bool enableStreamCallback( pgr_camera::booleanRequest& request, pgr_camera::booleanResponse& response );
-     bool enableOneShot( pgr_camera::oneshotRequest& request, pgr_camera::oneshotResponse& response );
+    void publishImage ( FlyCapture2::Image *frame, int camIndex );
+    void publishImageWithTimestamp ( FlyCapture2::Image *frame, int camIndex,  ros::Time timestamp );
+    void overrideFrameCallback ( std::function <void ( FlyCapture2::Image *, unsigned int ) > callback );
+    bool enableStreamCallback ( pgr_camera::booleanRequest& request, pgr_camera::booleanResponse& response );
+    bool enableOneShot ( pgr_camera::oneshotRequest& request, pgr_camera::oneshotResponse& response );
 
-     virtual void configure ( pgr_camera::PGRCameraConfig &config, uint32_t level ) ;
+    virtual void configure ( pgr_camera::PGRCameraConfig &config, uint32_t level ) ;
 
-     unsigned int getCameraIndex() {
-          return pgrCamera->getCamIndex();
-     }
-
-     void setup();
-     void start ();
-     void stop ();
-
-     void enablePublishing(bool enable) {
-       pgrCamera->enableCallback(enable);
+    unsigned int getCameraIndex() {
+        return pgrCamera->getCamIndex();
     }
 
-     void enableOneShot(bool enable, int oneshotCountMax) {
-       oneshotPublished = false;
-       this->oneshotCount = 0;
-       this->oneshotCountMax = oneshotCountMax;
-       pgrCamera->enableCallback(enable);
-       oneshotEnabled = enable;
-     }
+    void setup();
+    void start ();
+    void stop ();
+
+    void enablePublishing ( bool enable ) {
+        pgrCamera->enableCallback ( enable );
+    }
+
+    void enableOneShot ( bool enable, int oneshotCountMax ) {
+        diagnosticsData.oneshotPublished = false;
+        diagnosticsData.oneshotCount = 0;
+        diagnosticsData.oneshotCountMax = oneshotCountMax;
+        pgrCamera->enableCallback ( enable );
+        state = ONE_SHOT;
+    }
 
 protected:
-     static bool frameToImage ( FlyCapture2::Image *frame, sensor_msgs::Image &image );
-     bool processFrame ( FlyCapture2::Image *frame, sensor_msgs::Image &img, sensor_msgs::CameraInfo &cam_info,  ros::Time timestamp );
-     void loadIntrinsics ( string inifile, unsigned int cameraSerialNumber );
-     void setupConfigure();
-     void baseSetupConfigure(pgr_camera::PGRCameraConfig& min, pgr_camera::PGRCameraConfig& max);
-     void baseConfigure(pgr_camera::PGRCameraConfig& config,  uint32_t level);
-     PropertyInfo getPropertyInfo(PropertyType propertyType);
+    static bool frameToImage ( FlyCapture2::Image *frame, sensor_msgs::Image &image );
+    bool processFrame ( FlyCapture2::Image *frame, sensor_msgs::Image &img, sensor_msgs::CameraInfo &cam_info,  ros::Time timestamp );
+    void loadIntrinsics ( string inifile, unsigned int cameraSerialNumber );
+    void setupConfigure();
+    void baseSetupConfigure ( pgr_camera::PGRCameraConfig& min, pgr_camera::PGRCameraConfig& max );
+    void baseConfigure ( pgr_camera::PGRCameraConfig& config,  uint32_t level );
+    PropertyInfo getPropertyInfo ( PropertyType propertyType );
 
 protected:
-     ros::NodeHandle nodeHandler;
-     ros::Publisher cameraDidPublishPublisher;
-     image_transport::ImageTransport imageTransport;
-     image_transport::CameraPublisher cameraPublisher;
-     polled_camera::PublicationServer publicationServer;
-     ros::ServiceServer streamEnabledService;
-     ros::ServiceServer oneShotService;
-     camera_info_manager::CameraInfoManager cameraInfoManager;
-     DynamicReconfigureServer dynamicReconfigureServer;
-     pgr_camera::PGRCameraConfig currentConfig;
-     bool oneshotEnabled;
+    ros::NodeHandle nodeHandler;
+    ros::Publisher cameraDidPublishPublisher;
+    image_transport::ImageTransport imageTransport;
+    image_transport::CameraPublisher cameraPublisher;
+    polled_camera::PublicationServer publicationServer;
+    ros::ServiceServer streamEnabledService;
+    ros::ServiceServer oneShotService;
 
-     // Camera
-     boost::shared_ptr<PgrCamera > pgrCamera;
-     bool setupDone;
-     bool running;
+    camera_info_manager::CameraInfoManager cameraInfoManager;
+    DynamicReconfigureServer dynamicReconfigureServer;
 
-     // ROS messages
-     sensor_msgs::Image sensorImage;
-     sensor_msgs::CameraInfo cameraInfo;
+    pgr_camera::PGRCameraConfig currentConfig;
 
-     // Diagnostics
-     int frameCount;
-     int oneshotPublished;
-     int publishedCount;
-     int oneshotCount;
-     int oneshotCountMax;
+    State state;
+    std::shared_ptr<pgr_camera::PgrCamera> pgrCamera;
+    sensor_msgs::Image sensorImage;
+    sensor_msgs::CameraInfo cameraInfo;
+    DiagnosticsData diagnosticsData;
 };
-
-
 #endif                                                      // PGRCAMERANODE_H

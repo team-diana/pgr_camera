@@ -36,7 +36,6 @@
 #define PGRCAMERA_H
 
 #include "flycapture/FlyCapture2.h"
-#include <ros/ros.h>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include <string>
@@ -46,7 +45,6 @@ using namespace std;
 namespace pgr_camera
 {
 
-  void printCameras();
 
   class Camera
   {
@@ -59,26 +57,29 @@ namespace pgr_camera
     void start ();
     void stop ();
 //      void frameDone(FlyCapture2::Image *frame, void *pCallbackData);
-    void setFrameCallback (boost::function < void (FlyCapture2::Image *) > callback);
-    void SetVideoModeAndFramerate (unsigned int width, unsigned int height, string format, double rate);
+    void setFrameCallback (std::function <void(FlyCapture2::Image*)> callback);
+    void SetVideoModeAndFramerate (unsigned int width, unsigned int height,
+                          string format, double rate);
     void SetExposure (bool _auto, bool onoff, unsigned int value = 50);
     void SetGain (bool _auto, float value = 0.0);
     void SetShutter (bool _auto, float value = 0.015);
 
-    // FIXME: following should really be private, but I can't see how to make the compiler
-    // happy if they are..
-      boost::function < void (FlyCapture2::Image *) > userCallback_;
-      boost::mutex frameMutex_;
 
   private:
     FlyCapture2::PGRGuid guid;
     FlyCapture2::Camera camPGR;
     FlyCapture2::Image rawPGRImage;
     FlyCapture2::FrameRate frameRate;
+    std::function < void (FlyCapture2::Image *) > userCallback_;
+    std::mutex frameMutex_;
     bool setup ();
 
   };
 
-}                               // namespace pgrcamera
+  void printCameras();
+}  // namespace pgr_camera
 
-#endif                          // PGRCAMERA_H
+#endif
+
+// PGRCAMERA_H
+

@@ -70,7 +70,7 @@ private:
   string frame_id;
   string camera_info_url_;
   // Camera
-  boost::scoped_ptr < pgr_camera::Camera > cam_;
+  std::scoped_ptr < pgr_camera::Camera > cam_;
   bool running;
 
 public:

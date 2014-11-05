@@ -35,38 +35,37 @@
 #ifndef PGRCAMERA_H
 #define PGRCAMERA_H
 
+#include "Camera.h"
+#include "pgr_types.h"
+
 #include "flycapture/FlyCapture2.h"
+#include "flycapture/CameraBase.h"
+#include "flycapture/Image.h"
+
 #include <ros/ros.h>
-#include <boost/function.hpp>
-#include <boost/thread.hpp>
 #include <string>
 #include <cstdlib>
 #include <memory>
+#include <mutex>
+#include <functional>
 
 #define PRINT_ERROR {ROS_ERROR(error.GetDescription());}
 #define PGRERROR_OK FlyCapture2::PGRERROR_OK
 #define PRINT_ERROR_AND_RETURN_FALSE {ROS_ERROR(error.GetDescription()); return false;}
 
-using namespace FlyCapture2;
-using namespace std;
-using namespace boost;
-
-# include <boost/shared_ptr.hpp>
+namespace pgr_camera {
 
 class PgrCameraFactory;
 
+class PgrCamera
+{
+    friend class pgr_camera::PgrCameraFactory;
 
+public:
+    PgrCamera ( std::shared_ptr<FlyCapture2::CameraBase> camera, FlyCapture2::PGRGuid guid,
+                SerialNumber serialNumber, FlyCapture2::InterfaceType interfaceType );
 
-class PgrCamera {
-
-    friend class PgrCameraFactory;
-
-    private:
-    PgrCamera ( shared_ptr< CameraBase > camera, PGRGuid guid, unsigned int serialNumber,  InterfaceType interfaceType );
-
-    public:
-
-    //void initCam ();
+public:
     void start ();
     void stop ();
 
@@ -74,7 +73,7 @@ class PgrCamera {
     void initCam();
 
     static void frameDone ( FlyCapture2::Image *frame,const void *pCallbackData );
-    void setFrameCallback ( boost::function < void ( FlyCapture2::Image *, unsigned int )  > callback );
+    void setFrameCallback ( std::function < void ( FlyCapture2::Image *, unsigned int )  > callback );
 
 
     void SetBinning ( unsigned int horz, unsigned int vert );
@@ -84,27 +83,27 @@ class PgrCamera {
     float GetFrameRate();
     void SetFrameRate ( bool _auto,  float value = 60 );
     void SetGigESettings ( unsigned int packetSize,  unsigned int packetDelay );
-    PropertyInfo getPropertyInfo ( FlyCapture2::PropertyType type );
+    FlyCapture2::PropertyInfo getPropertyInfo ( FlyCapture2::PropertyType type );
 
 
     void SetGigEPacketSize ( unsigned int packetSize );
     void SetGigEPacketDelay ( unsigned int packetDelay );
-    GigECamera* castToGigECamera ( CameraBase* cameraBase );
-    GigEImageSettings getCurrentGigEImageSettings();
+    FlyCapture2::GigECamera* castToGigECamera ( FlyCapture2::CameraBase* cameraBase );
+    FlyCapture2::GigEImageSettings getCurrentGigEImageSettings();
     unsigned int getCurrentPacketSize();
     unsigned int getCurrentPacketDelay();
-    unsigned int getGigEProperty ( GigEProperty gigeProperty );
+    unsigned int getGigEProperty ( FlyCapture2::GigEProperty gigeProperty );
 
 
-    shared_ptr<CameraBase> getCamera() {
+    std::shared_ptr<FlyCapture2::CameraBase> getCamera() {
         return camPGR;
     }
 
-    unsigned int getSerialNumber() {
+    SerialNumber getSerialNumber() {
         return camSerNo;
     }
 
-    PGRGuid getGuid() {
+    FlyCapture2::PGRGuid getGuid() {
         return guid;
     }
 
@@ -116,7 +115,7 @@ class PgrCamera {
         this->camIndex = camIndex;
     }
 
-    InterfaceType getInterfaceType() {
+    FlyCapture2::InterfaceType getInterfaceType() {
         return interfaceType;
     }
 
@@ -128,21 +127,23 @@ class PgrCamera {
 
     // FIXME: following should really be private, but I can't see how to make the compiler
     // happy if they are..
-    boost::function < void ( FlyCapture2::Image *, unsigned int ) > userCallback;
-    boost::mutex frameMutex_;
+    std::function < void ( FlyCapture2::Image *, unsigned int ) > userCallback;
+    std::mutex frameMutex_;
 
 
-    private:
+private:
     unsigned int camSerNo;
     unsigned int camIndex;
-    boost::shared_ptr<FlyCapture2::CameraBase> camPGR;
+    std::shared_ptr<FlyCapture2::CameraBase> camPGR;
     //FlyCapture2::GigECamera gigecamPGR;
-    PGRGuid guid;
-    Image rawPGRImage;
-    FrameRate frameRate;
-    InterfaceType interfaceType;
+    FlyCapture2::PGRGuid guid;
+    FlyCapture2::Image rawPGRImage;
+    FlyCapture2::FrameRate frameRate;
+    FlyCapture2::InterfaceType interfaceType;
     bool callbackEnabled;
 };
 
+}
 
-#endif                          // PGRCAMERA_H
+#endif
+// PGRCAMERA_H

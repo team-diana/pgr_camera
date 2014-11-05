@@ -32,11 +32,16 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "pgr_camera/pgr_camera.h"
+#include "pgr_camera/Camera.h"
+#include <team_diana_lib/logging/logging.h>
+#include <team_diana_lib/strings/strings.h>
+#include <mutex>
+
+using namespace Td;
 
 static bool check_success(FlyCapture2::Error error) {
     if(error != FlyCapture2::PGRERROR_OK) {
-        ROS_ERROR ("%s", error.GetDescription());
+         ros_error("%s", error.GetDescription());
         return false;
     }
     return true;
@@ -53,33 +58,31 @@ namespace pgr_camera
 void printCameras()
 {
   FlyCapture2::BusManager busMgr;
-  unsigned int cameraNum;
   if(!check_success(busMgr.GetNumOfCameras(&cameraNum))) return;
-  ROS_INFO ("Found %d cameras", cameraNum);
+  ros_info(toString("Found ", cameraNum, " cameras"));
+
+  unsigned int cameraNum;
   for (unsigned int i = 0; i < cameraNum; i++)
   {
     unsigned int serNo;
     if(check_success(busMgr.GetCameraSerialNumberFromIndex(i, &serNo))) {
-      ROS_INFO ("Camera %u: S/N %u", i, serNo);
+      ros_info(toString("Camera n. ", i, " S.N.: ", serNo));
     }
   }
 }
 
-// FIXME: How to make this a member function?
 void frameDone(FlyCapture2::Image * frame, const void *pCallbackData)
 {
   Camera *camPtr = (Camera *)pCallbackData;
-  if (camPtr->userCallback_.empty())
+  if (!camPtr->userCallback_)
   {
-    ROS_WARN ("User callback empty!");
-    return;
+    ros_warn("User callback empty!");
+  } else {
+    std::lock_guard<std::mutex> guard(camPtr->frameMutex_);
+    camPtr->userCallback_(frame);
   }
-  
-  // TODO: thread safety OK here?
-  boost::lock_guard<boost::mutex> guard(camPtr->frameMutex_);
-  camPtr->userCallback_(frame);
-  //ROS_INFO("in frameDone");
 }
+
 Camera::Camera() : frameRate(FlyCapture2::FRAMERATE_30)
 {
   FlyCapture2::BusManager busMgr;
@@ -93,7 +96,7 @@ Camera::Camera(unsigned int serNo) : frameRate(FlyCapture2::FRAMERATE_30)
 }
 
 
-void Camera::setFrameCallback(boost::function<void(FlyCapture2::Image *)> callback)
+void Camera::setFrameCallback(std::function<void(FlyCapture2::Image *)> callback)
 {
   userCallback_ = callback;
 }
@@ -120,12 +123,12 @@ void Camera::initCam()
   check_success(camPGR.GetConfiguration(&fc2Config));
   fc2Config.grabMode = FlyCapture2::DROP_FRAMES; // supposedly the default, but just in case..
   check_success(camPGR.SetConfiguration(&fc2Config));
-  
+
   ROS_INFO ("Setting video mode to VIDEOMODE_640x480Y8, framerate to FRAMERATE_30...");
   if(check_success(camPGR.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_640x480Y8, FlyCapture2::FRAMERATE_30))) {
     ROS_INFO ("...success");
   }
-  
+
   FlyCapture2::EmbeddedImageInfo embedInfo;
   embedInfo.frameCounter.onOff = true;
   check_success(camPGR.SetEmbeddedImageInfo(&embedInfo));
@@ -180,7 +183,7 @@ void Camera::SetVideoModeAndFramerate(unsigned int width, unsigned int height, s
   // TODO: support additional modes
   using namespace FlyCapture2;
   ROS_INFO_STREAM("Requested Width: " << width << " Height: " << height << " Format: '" << format <<"'");
-  
+
   VideoMode vidMode;
        if(width==640  && height==480 && format=="Y8" ) vidMode = VIDEOMODE_640x480Y8;
   else if(width==640  && height==480 && format=="Y16") vidMode = VIDEOMODE_640x480Y16;
