@@ -268,7 +268,7 @@ bool PgrCameraNode::enableOneShot ( pgr_camera::oneshotRequest& request, pgr_cam
 
 void PgrCameraNode::publishImageWithTimestamp ( FlyCapture2::Image *frame, int camIndex,  ros::Time timestamp ) {
     if ( processFrame ( frame, sensorImage, cameraInfo, timestamp ) ) {
-        ROS_INFO ( "Publish image of camera n.%d , timestamp is %llu",  camIndex, timestamp.toNSec() );
+        ROS_DEBUG ( "Publish image of camera n.%d , timestamp is %lu",  camIndex, timestamp.toNSec() );
         cameraPublisher.publish ( sensorImage, cameraInfo, timestamp );
 
         publishedCount++;
