@@ -1,60 +1,24 @@
 <package>
-  <name>pgr_camera</name>
-  <version>1.0.0</version>
-  <description>A ROS node to provide access to Point Grey Research cameras, using the
+	<name>pgr_camera</name>
+	<version>1.2.4</version>
+	<description>
+		A ROS node to provide access to Point Grey Research cameras, using the
 		FlyCapture2 SDK API
 		Acknowledgement: This package is based largely on the prosilica_camera package,
-		by Patrick Mihelich (http://www.ros.org/wiki/prosilica_camera).</description>
-  <maintainer email="bouffard@eecs.berkeley.edu">Patrick Bouffard</maintainer>
-
-  <license>BSD</license>
-
-  <url type="website">http://ros.org/wiki/pgr_camera</url>
-  <!-- <url type="bugtracker"></url> -->
-
-  <author>Patrick Bouffard</author>
-
-  <!-- Dependencies which this package needs to build itself. -->
-  <buildtool_depend>catkin</buildtool_depend>
-
-  <!-- Dependencies needed to compile this package. -->
-  <build_depend>self_test</build_depend>
-  <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>diagnostic_updater</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>camera_info_manager</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>image_transport</build_depend>
-  <build_depend>driver_base</build_depend>
-  <build_depend>diagnostic_msgs</build_depend>
-
-  <!-- Dependencies needed after this package is compiled. -->
-  <run_depend>self_test</run_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>diagnostic_updater</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>camera_info_manager</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>image_transport</run_depend>
-  <run_depend>driver_base</run_depend>
-  <run_depend>diagnostic_msgs</run_depend>
-
-  <!-- Dependencies needed only for running tests. -->
-  <!-- <test_depend>self_test</test_depend> -->
-  <!-- <test_depend>dynamic_reconfigure</test_depend> -->
-  <!-- <test_depend>roscpp</test_depend> -->
-  <!-- <test_depend>driver_base</test_depend> -->
-  <!-- <test_depend>std_msgs</test_depend> -->
-  <!-- <test_depend>camera_info_manager</test_depend> -->
-  <!-- <test_depend>sensor_msgs</test_depend> -->
-  <!-- <test_depend>image_transport</test_depend> -->
-  <!-- <test_depend>diagnostic_updater</test_depend> -->
-  <!-- <test_depend>diagnostic_msgs</test_depend> -->
-
-<export>
-    <rosdoc config="rosdoc.yaml"/>
-</export>
-
+		by Patrick Mihelich (http://www.ros.org/wiki/prosilica_camera).
+	</description>
+	<author>Patrick Bouffard</author>
+	<maintainer email="asdf@gmail.com">asdf</maintainer>
+	<license>BSD</license>
+	<url>http://ros.org/wiki/pgr_camera</url>
+	<export>
+		<rosdoc config="rosdoc.yaml" />
+	</export>
+   <build_depend>dynamic_reconfigure</build_depend>
+   <build_depend>message_generation</build_depend>
+   <run_depend>dynamic_reconfigure</run_depend>
+   <run_depend>message_runtime</run_depend>
+	<buildtool_depend>catkin</buildtool_depend>
 </package>
+
+

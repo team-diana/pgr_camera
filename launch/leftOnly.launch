@@ -1,0 +1,8 @@
+<launch>
+        <param name="ROS_NAMESPACE" value="stereo" />
+	<node name="camera_node" pkg="pgr_camera" type="pgr_camera_node" output="screen" cwd="node" args="--serials 13029237">
+		<remap from="/camera0/image_raw" to="/stereo/left/image_raw"/>
+                <remap from="/camera0/camera_info" to="/stereo/left/camera_info"/>
+		<param name="frame_rate" type="double" value="2.0" />
+	</node>
+</launch>

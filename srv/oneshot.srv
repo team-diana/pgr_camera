@@ -1,0 +1,4 @@
+bool enabled
+int32 oneshot_count
+---
+bool enabled

@@ -1,0 +1,7 @@
+Based on original work of pbouffard
+https://github.com/pbouffard/ros.pgr_camera
+
+Contributors:
+Davide Pala davidep93@alice.it
+Tamer Saadeh tamersaadeh@gmail.com
+Vincenzo Giovanni Comito clynamen@gmail.com

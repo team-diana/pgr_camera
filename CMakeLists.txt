@@ -1,79 +1,181 @@
-# Catkin User Guide: http://www.ros.org/doc/groovy/api/catkin/html/user_guide/user_guide.html
-# Catkin CMake Standard: http://www.ros.org/doc/groovy/api/catkin/html/user_guide/standards.html
 cmake_minimum_required(VERSION 2.8.3)
 project(pgr_camera)
-# Load catkin and all dependencies required for this package
-# TODO: remove all from COMPONENTS that are not catkin packages.
-find_package(catkin REQUIRED COMPONENTS self_test dynamic_reconfigure roscpp driver_base std_msgs camera_info_manager sensor_msgs image_transport diagnostic_updater diagnostic_msgs)
-# CATKIN_MIGRATION: removed during catkin migration
-# cmake_minimum_required(VERSION 2.4.6)
 
-# CATKIN_MIGRATION: removed during catkin migration
-# include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS message_generation dynamic_reconfigure roscpp std_msgs dynamic_reconfigure image_transport polled_camera camera_calibration_parsers camera_info_manager)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -lflycapture -fpermissive" )
+
+#TODO: this is orrbly wrong!!!! erase me
+set(FLYCAPTURE_LIBRARIES "/usr/lib/libflycapture.so")
+set(FLYCAPTURE_INCLUDE_PATH "/usr/include/flycapture")
 
 
-# CATKIN_MIGRATION: removed during catkin migration
-# rosbuild_init()
 
-#set the default path for built executables to the "bin" directory
-
-# CATKIN_MIGRATION: removed during catkin migration
-# set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-
-# CATKIN_MIGRATION: removed during catkin migration
-# set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
-
-# CATKIN_MIGRATION: removed during catkin migration
-# rosbuild_add_boost_directories()
-
-# Generate dynamic parameters
-
-# CATKIN_MIGRATION: removed during catkin migration
-# rosbuild_find_ros_package(dynamic_reconfigure)
-
-# CATKIN_MIGRATION: removed during catkin migration
-# include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+#TODO: fix this, this should be called, but gives error
 generate_dynamic_reconfigure_options(
-  cfg/PGRCamera.cfg
+	cfg/PGRCamera.cfg
 )
+
+## System dependencies are found with CMake's conventions
+find_package(Boost REQUIRED COMPONENTS system program_options)
+
+
+## Uncomment this if the package has a setup.py. This macro ensures
+## modules and global scripts declared therein get installed
+## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
+# catkin_python_setup()
+
+#######################################
+## Declare ROS messages and services ##
+#######################################
+
+## Generate messages in the 'msg' folder
+ add_message_files(
+   FILES
+   published.msg
+#   Message1.msg
+#   Message2.msg
+ )
+
+## Generate services in the 'srv' folder
+ add_service_files(
+   FILES
+   boolean.srv
+   oneshot.srv
+ )
+
 ## Generate added messages and services with any dependencies listed here
-#generate_messages(
-#    DEPENDENCIES 
-#)
+ generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+ )
 
-# catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
-# TODO: fill in what other packages will need to use this package
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if you package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    DEPENDS  # TODO
-    CATKIN_DEPENDS self_test dynamic_reconfigure roscpp driver_base std_msgs camera_info_manager sensor_msgs image_transport diagnostic_updater diagnostic_msgs
-    INCLUDE_DIRS include# TODO include
-    LIBRARIES # TODO
+ # INCLUDE_DIRS include
+  LIBRARIES pgr_camera
+  CATKIN_DEPENDS message_runtime
+#  DEPENDS system_lib
 )
 
-include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+# set(CMAKE_CXX_FLAGS "-lflycapture -fpermissive")
+
+#this is orrbly wrong!!!! erase me
+include_directories(./include/  ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_PATH})
+# ---------
+add_library(pgr_camera src/libpgrcam/PgrCamera.cpp src/libpgrcam/PgrCameraFactory.cpp)
+add_executable(pgr_camera_node src/nodes/main.cpp src/nodes/PgrCameraNode.cpp src/nodes/PgrGigECameraNode.cpp src/nodes/CameraSynchronizer.cpp)
+add_dependencies(pgr_camera_node ${PROJECT_NAME}_gencfg)
+target_link_libraries(
+        pgr_camera_node
+        pgr_camera
+        ${catkin_LIBRARIES}
+        ${FLYCAPTURE_LIBRARIES}
+        ${Boost_LIBRARIES}
+)
 
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-#rosbuild_gensrv()
+message("CATKIN INSTALL ---- " ${CATKIN_PACKAGE_LIB_DESTINATION})
+message("cmake INSTALL ---- " ${CMAKE_INSTALL_PREFIX})
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
-add_subdirectory(src)
-#rosbuild_add_executable(pgr_camera_node src/pgr_camera_node.cpp)
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+##   PATTERN ".svn" EXCLUDE
+# )
+
+## Mark executables and/or libraries for installation
+ install(TARGETS pgr_camera  pgr_camera_node
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+
+###########
+## Build ##
+###########
+
+#set(CMAKE_CXX_FLAGS "-lflycapture -fpermissive")
+
+#add_subdirectory(src)
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+# include_directories(include)
+
+## Declare a cpp library
+# add_library(catkinPgrCamera
+#   src/${PROJECT_NAME}/catkinPgrCamera.cpp
+# )
+
+## Declare a cpp executable
+# add_executable(catkinPgrCamera_node src/catkinPgrCamera_node.cpp)
+
+## Add cmake target dependencies of the executable/library
+## as an example, message headers may need to be generated before nodes
+# add_dependencies(catkinPgrCamera_node catkinPgrCamera_generate_messages_cpp)
+
+## Specify libraries to link a library or executable target against
+# target_link_libraries(catkinPgrCamera_node
+#   ${catkin_LIBRARIES}
+# )
+
+#############
+## Install ##
+#############
+
+# all install targets should use catkin DESTINATION variables
+# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+
+## Mark executable scripts (Python etc.) for installation
+## in contrast to setup.py, you can choose the destination
+# install(PROGRAMS
+#   scripts/my_python_script
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
+## Mark executables and/or libraries for installation
+# install(TARGETS pgr_camera
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
+## Mark cpp header files for installation
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
+
+## Mark other files for installation (e.g. launch and bag files, etc.)
+# install(FILES
+#   # myfile1
+#   # myfile2
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
+
+#############
+## Testing ##
+#############
+
+## Add gtest based cpp test target and link libraries
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_catkinPgrCamera.cpp)
+# if(TARGET ${PROJECT_NAME}-test)
+#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+# endif()
+
+## Add folders to be run by python nosetests
+# catkin_add_nosetests(test)
