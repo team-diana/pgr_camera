@@ -1,36 +1,19 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pgr_camera)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS message_generation dynamic_reconfigure roscpp std_msgs dynamic_reconfigure image_transport polled_camera camera_calibration_parsers camera_info_manager)
+find_package(Boost REQUIRED COMPONENTS system program_options)
 
 SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -lflycapture -fpermissive" )
 
-#TODO: this is orrbly wrong!!!! erase me
 set(FLYCAPTURE_LIBRARIES "/usr/lib/libflycapture.so")
 set(FLYCAPTURE_INCLUDE_PATH "/usr/include/flycapture")
 
+include_directories(../../include/ ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_PATH})
 
-
-#TODO: fix this, this should be called, but gives error
 generate_dynamic_reconfigure_options(
 	cfg/PGRCamera.cfg
 )
-
-## System dependencies are found with CMake's conventions
-find_package(Boost REQUIRED COMPONENTS system program_options)
-
-
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
-#######################################
-## Declare ROS messages and services ##
-#######################################
 
 ## Generate messages in the 'msg' folder
  add_message_files(
@@ -85,9 +68,6 @@ target_link_libraries(
         ${Boost_LIBRARIES}
 )
 
-
-message("CATKIN INSTALL ---- " ${CATKIN_PACKAGE_LIB_DESTINATION})
-message("cmake INSTALL ---- " ${CMAKE_INSTALL_PREFIX})
 
 # install(DIRECTORY include/${PROJECT_NAME}/
 #   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
@@ -146,12 +126,12 @@ message("cmake INSTALL ---- " ${CMAKE_INSTALL_PREFIX})
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
-## Mark executables and/or libraries for installation
-# install(TARGETS pgr_camera
+# Mark executables and/or libraries for installation
+install(TARGETS pgr_camera pgr_camera_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark cpp header files for installation
 # install(DIRECTORY include/${PROJECT_NAME}/
