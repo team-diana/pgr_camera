@@ -1,8 +1,8 @@
 #ifndef PGRGIGECAMERANODE_H
 # define PGRGIGECAMERANODE_H
 
-#include "pgr_camera/PgrCamera.h"
-# include "PgrCameraNode.h"
+#include "PgrCamera.h"
+#include "PgrCameraNode.h"
 
 
 class PgrGigECameraNode : public PgrCameraNode {
@@ -12,10 +12,10 @@ public:
      PgrCameraNode(nodeHandle,  pgrCamera) {
 
     }
-     virtual void configure ( pgr_camera::PGRCameraConfig &config, uint32_t level ) ;
+     virtual void configure ( pgr_camera::PgrCameraConfig &config, uint32_t level ) ;
 
 private:
-     void gigeConfigure(pgr_camera::PGRCameraConfig &config, uint32_t level ) ;
+     void gigeConfigure(pgr_camera::PgrCameraConfig &config, uint32_t level ) ;
 };
 
 #endif                                                      // PGRGIGECAMERANODE_H

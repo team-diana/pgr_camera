@@ -13,7 +13,7 @@ set(FLYCAPTURE_INCLUDE_PATH "/usr/include/flycapture")
 include_directories(../../include/ ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_PATH})
 
 generate_dynamic_reconfigure_options(
-	cfg/PGRCamera.cfg
+	cfg/PgrCamera.cfg
 )
 
 ## Generate messages in the 'msg' folder
@@ -59,7 +59,8 @@ catkin_package(
 include_directories(./include/  ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_PATH})
 # ---------
 add_library(pgr_camera src/libpgrcam/PgrCamera.cpp src/libpgrcam/PgrCameraFactory.cpp)
-add_executable(pgr_camera_node src/nodes/main.cpp src/nodes/PgrCameraNode.cpp src/nodes/PgrGigECameraNode.cpp src/nodes/CameraSynchronizer.cpp)
+add_executable(pgr_camera_node src/node/main.cpp src/node/PgrCameraNode.cpp
+              src/node/PgrGigECameraNode.cpp src/node/CameraSynchronizer.cpp)
 add_dependencies(pgr_camera_node ${PROJECT_NAME}_gencfg)
 target_link_libraries(
         pgr_camera_node
@@ -106,7 +107,6 @@ target_link_libraries(
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(catkinPgrCamera_node catkinPgrCamera_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(catkinPgrCamera_node

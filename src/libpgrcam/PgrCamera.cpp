@@ -32,14 +32,16 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "pgr_camera/PgrCamera.h"
+#include "PgrCamera.h"
+
+#include "flycapture/Image.h"
+#include "flycapture/CameraBase.h"
+
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <mutex>
 #include <functional>
-#include "flycapture/Image.h"
-#include "flycapture/CameraBase.h"
 
 #define SLEEP_TIME 1
 

@@ -35,8 +35,7 @@
 #ifndef PGRCAMERA_H
 #define PGRCAMERA_H
 
-#include "Camera.h"
-#include "pgr_types.h"
+#include "PgrTypes.h"
 
 #include "flycapture/FlyCapture2.h"
 #include "flycapture/CameraBase.h"

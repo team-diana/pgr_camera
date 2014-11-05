@@ -1,4 +1,4 @@
-#include "pgr_camera/PgrCameraFactory.h"
+#include "PgrCameraFactory.h"
 
 using namespace FlyCapture2;
 

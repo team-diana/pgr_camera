@@ -1,7 +1,7 @@
 #ifndef PGRCAMERAFACTORY_H
 #define PGRCAMERAFACTORY_H
 
-#include "pgr_camera/PgrCamera.h"
+#include "PgrCamera.h"
 
 using namespace FlyCapture2;
 using namespace std;

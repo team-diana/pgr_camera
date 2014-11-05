@@ -32,6 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <PgrCamera.h>
+#include "pgr_camera/PgrCameraConfig.h"
+#include "PgrCameraFactory.h"
+
 // ROS communication
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -42,14 +46,11 @@
 #include <camera_calibration_parsers/parse_ini.h>
 #include <std_msgs/String.h>
 #include <polled_camera/publication_server.h>
-#include <pgr_camera/PgrCamera.h>
 #include <camera_info_manager/camera_info_manager.h>
 
 // Dynamic reconfigure
 #include <dynamic_reconfigure/server.h>
 #include <driver_base/SensorLevels.h>
-#include "pgr_camera/PGRCameraConfig.h"
-#include "pgr_camera/PgrCameraFactory.h"
 
 #include <XmlRpcValue.h>
 
@@ -93,7 +94,7 @@ DynamicReconfigureServer &PgrCameraNode::getDynamicReconfigureServer()
   return dynamicReconfigureServer;
 }
 
-void PgrCameraNode::configure(pgr_camera::PGRCameraConfig &config, uint32_t level)
+void PgrCameraNode::configure(pgr_camera::PgrCameraConfig &config, uint32_t level)
 {
   baseConfigure(config,  level);
   currentConfig = config;
@@ -101,9 +102,9 @@ void PgrCameraNode::configure(pgr_camera::PGRCameraConfig &config, uint32_t leve
 
 void PgrCameraNode::setupConfigure()
 {
-  pgr_camera::PGRCameraConfig deflt;
+  pgr_camera::PgrCameraConfig deflt;
   dynamicReconfigureServer.getConfigDefault(deflt);
-  pgr_camera::PGRCameraConfig min,  max;
+  pgr_camera::PgrCameraConfig min,  max;
   min = max = deflt;
 
   baseSetupConfigure(min, max);
@@ -112,7 +113,7 @@ void PgrCameraNode::setupConfigure()
   dynamicReconfigureServer.setConfigMax(max);
 }
 
-void PgrCameraNode::baseSetupConfigure(pgr_camera::PGRCameraConfig &min, pgr_camera::PGRCameraConfig &max)
+void PgrCameraNode::baseSetupConfigure(pgr_camera::PgrCameraConfig &min, pgr_camera::PgrCameraConfig &max)
 {
 
   PropertyInfo gain = getPropertyInfo(GAIN);
@@ -126,7 +127,7 @@ void PgrCameraNode::baseSetupConfigure(pgr_camera::PGRCameraConfig &min, pgr_cam
   max.frame_rate = framerate.max;
 }
 
-void PgrCameraNode::baseConfigure(pgr_camera::PGRCameraConfig &config,  uint32_t level)
+void PgrCameraNode::baseConfigure(pgr_camera::PgrCameraConfig &config,  uint32_t level)
 {
   ros_info("Reconfigure request received");
 
@@ -246,7 +247,6 @@ bool PgrCameraNode::frameToImage(FlyCapture2::Image *frame, sensor_msgs::Image &
     encoding = BAYER_ENCODINGS[bayerFmt];
   }
 
-  //uint32_t step = frame->GetDataSize() / frame->GetRows(); // TODO: really need to compute this every time?
   return sensor_msgs::fillImage(image, encoding, frame->GetRows(),
                                 frame->GetCols(), frame->GetStride(), frame->GetData());
 }
@@ -304,10 +304,6 @@ void PgrCameraNode::publishImageWithTimestamp(FlyCapture2::Image *frame, int cam
     published.count = diagnosticsData.publishedCount;
     published.oneshot_count = diagnosticsData.oneshotCount;
     cameraDidPublishPublisher.publish(published);
-
-    if (state == ONE_SHOT && diagnosticsData.oneshotCount >= diagnosticsData.oneshotCountMax) {
-      enableOneShot(false, 0);
-    }
   }
 }
 

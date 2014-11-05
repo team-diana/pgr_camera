@@ -10,7 +10,7 @@
 #include <camera_calibration_parsers/parse_ini.h>
 #include <std_msgs/String.h>
 #include <polled_camera/publication_server.h>
-#include <pgr_camera/PgrCamera.h>
+#include <PgrCamera.h>
 #include <pgr_camera/boolean.h>
 #include <pgr_camera/published.h>
 #include <pgr_camera/oneshot.h>
@@ -19,8 +19,8 @@
 // Dynamic reconfigure
 #include <dynamic_reconfigure/server.h>
 #include <driver_base/SensorLevels.h>
-#include "pgr_camera/PGRCameraConfig.h"
-#include "pgr_camera/PgrCameraFactory.h"
+#include "pgr_camera/PgrCameraConfig.h"
+#include "PgrCameraFactory.h"
 
 #include <XmlRpcValue.h>
 
@@ -36,7 +36,7 @@
 #include <cstdlib>
 #include <unistd.h>
 
-typedef dynamic_reconfigure::Server < pgr_camera::PGRCameraConfig > DynamicReconfigureServer;
+typedef dynamic_reconfigure::Server < pgr_camera::PgrCameraConfig > DynamicReconfigureServer;
 
 class PgrCameraNode
 {
@@ -82,7 +82,7 @@ public:
     bool enableStreamCallback ( pgr_camera::booleanRequest& request, pgr_camera::booleanResponse& response );
     bool enableOneShot ( pgr_camera::oneshotRequest& request, pgr_camera::oneshotResponse& response );
 
-    virtual void configure ( pgr_camera::PGRCameraConfig &config, uint32_t level ) ;
+    virtual void configure ( pgr_camera::PgrCameraConfig &config, uint32_t level ) ;
 
     unsigned int getCameraIndex() {
         return pgrCamera->getCamIndex();
@@ -105,12 +105,12 @@ public:
     }
 
 protected:
-    static bool frameToImage ( FlyCapture2::Image *frame, sensor_msgs::Image &image );
+    bool frameToImage ( FlyCapture2::Image *frame, sensor_msgs::Image &image );
     bool processFrame ( FlyCapture2::Image *frame, sensor_msgs::Image &img, sensor_msgs::CameraInfo &cam_info,  ros::Time timestamp );
     void loadIntrinsics ( string inifile, unsigned int cameraSerialNumber );
     void setupConfigure();
-    void baseSetupConfigure ( pgr_camera::PGRCameraConfig& min, pgr_camera::PGRCameraConfig& max );
-    void baseConfigure ( pgr_camera::PGRCameraConfig& config,  uint32_t level );
+    void baseSetupConfigure ( pgr_camera::PgrCameraConfig& min, pgr_camera::PgrCameraConfig& max );
+    void baseConfigure ( pgr_camera::PgrCameraConfig& config,  uint32_t level );
     PropertyInfo getPropertyInfo ( PropertyType propertyType );
 
 protected:
@@ -125,7 +125,7 @@ protected:
     camera_info_manager::CameraInfoManager cameraInfoManager;
     DynamicReconfigureServer dynamicReconfigureServer;
 
-    pgr_camera::PGRCameraConfig currentConfig;
+    pgr_camera::PgrCameraConfig currentConfig;
 
     State state;
     std::shared_ptr<pgr_camera::PgrCamera> pgrCamera;

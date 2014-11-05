@@ -1,3 +1,9 @@
+#include "pgr_camera/PgrCameraConfig.h"
+#include "PgrCameraFactory.h"
+#include "PgrCameraNode.h"
+#include "PgrGigECameraNode.h"
+#include "CameraSynchronizer.h"
+
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
@@ -13,9 +19,6 @@
 
 #include <dynamic_reconfigure/server.h>
 #include <driver_base/SensorLevels.h>
-#include "pgr_camera/PGRCameraConfig.h"
-#include "pgr_camera/PgrCameraFactory.h"
-
 #include <XmlRpcValue.h>
 
 #include <mutex>
@@ -26,10 +29,6 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <boost/program_options.hpp>
-
-#include "PgrCameraNode.h"
-#include "PgrGigECameraNode.h"
-#include "CameraSynchronizer.h"
 
 using namespace Td;
 
