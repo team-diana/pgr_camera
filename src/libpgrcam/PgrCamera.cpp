@@ -46,6 +46,7 @@
 #include <mutex>
 #include <functional>
 #include <thread>
+#include <boost/bind.hpp>
 
 // TODO: remove me /
 #include <pthread.h>
@@ -58,6 +59,8 @@ using namespace FlyCapture2;
 
 namespace pgr_camera {
 
+const boost::posix_time::millisec TIMER_INTERVAL(1000/60);
+
 PgrCamera::PgrCamera(shared_ptr<FlyCapture2::CameraBase > camera,
                      FlyCapture2::PGRGuid guid,
                      unsigned int serialNumber,
@@ -66,20 +69,19 @@ PgrCamera::PgrCamera(shared_ptr<FlyCapture2::CameraBase > camera,
      guid(guid),
      camSerNo(serialNumber),
      interfaceType(interfaceType),
-     callbackEnabled(true)
+     callbackEnabled(true),
+     timer(ioTimer, TIMER_INTERVAL)
 {}
 
-void PgrCamera::frameDone(FlyCapture2::Image * frame, const void *pCallbackData)
+void PgrCamera::frameDone(FlyCapture2::Image * frame)
 {
-
-  Td::ros_info(Td::toString("frameDone in thread id: ",
+  Td::ros_info(Td::toString("frameDone for camera ", getSerialNumber() ," in thread id: ",
                             this_thread::get_id(),
                " (pthread=", pthread_self(), ")"));
 
-  PgrCamera *camPtr = (PgrCamera *) pCallbackData;
-  if(camPtr->callbackEnabled && (bool)camPtr->userCallback) {
-    std::lock_guard<std::mutex> guard(camPtr->frameMutex);
-    camPtr->userCallback(frame,  camPtr->getCamIndex());
+  if(callbackEnabled && (bool)userCallback) {
+    std::lock_guard<std::mutex> guard(frameMutex);
+    userCallback(frame,  getCamIndex());
   }
   else {
     ROS_WARN("User callback empty!");
@@ -139,8 +141,18 @@ void PgrCamera::initCam()
   ROS_INFO("camInfo.isColorCamera = %d", camInfo.isColorCamera);
 }
 
+void PgrCamera::startTimer()
+{
+  flyCapCamera->StartCapture();
+  timer.async_wait(boost::bind(&PgrCamera::onTimerTick, this,
+        boost::asio::placeholders::error, &timer));
+
+  ioTimer.run();
+}
+
 void PgrCamera::start()
 {
+
   FlyCapture2::Error error;
   if(flyCapCamera->IsConnected()) {
     ROS_INFO("IsConnected returned true");
@@ -149,12 +161,36 @@ void PgrCamera::start()
     ROS_INFO("IsConnected returned false");
   }
 
-  if((error = flyCapCamera->StartCapture(&PgrCamera::frameDone, (const void *) this)) != PGRERROR_OK) {
-    ROS_ERROR(error.GetDescription());
-  }
-  else {
-    ROS_INFO("StartCapture succeeded.");
-  }
+  cameraThread = std::shared_ptr<std::thread>(new std::thread(&PgrCamera::startTimer, this));
+//   if(flyCapCamera->IsConnected()) {
+//     ROS_INFO("IsConnected returned true");
+//   }
+//   else {
+//     ROS_INFO("IsConnected returned false");
+//   }
+//
+//   if((error = flyCapCamera->StartSyncCapture(&PgrCamera::frameDone, (const void *) this)) != PGRERROR_OK) {
+//     ROS_ERROR(error.GetDescription());
+//   }
+//   else {
+//     ROS_INFO("StartCapture succeeded.");
+//   }
+}
+
+void PgrCamera::onTimerTick(const boost::system::error_code& /*e*/,
+    boost::asio::deadline_timer* t)
+{
+  Td::ros_info(Td::toString("onTimerTick for camera ", getSerialNumber() ," in thread id: ",
+                            this_thread::get_id(),
+               " (pthread=", pthread_self(), ")"));
+
+  FlyCapture2::Image image;
+  flyCapCamera->RetrieveBuffer(&image);
+  frameDone(&image);
+
+  t->expires_at(t->expires_at() + TIMER_INTERVAL);
+  t->async_wait(boost::bind(&PgrCamera::onTimerTick, this,
+     boost::asio::placeholders::error, t));
 }
 
 void PgrCamera::stop()

@@ -27,6 +27,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <cstdlib>
+#include <thread>
 #include <unistd.h>
 #include <boost/program_options.hpp>
 
@@ -134,9 +135,8 @@ int main(int argc, char **argv)
       cameraNodes.push_back(pn);
       pn->setup();
 
-      DynamicReconfigureServer::CallbackType f = boost::bind(&PgrCameraNode::configure, pn, _1, _2);
-      pn->getDynamicReconfigureServer().setCallback(f);
-      cameraIndex++;
+//       DynamicReconfigureServer::CallbackType f = boost::bind(&PgrCameraNode::configure, pn, _1, _2);
+//       pn->getDynamicReconfigureServer().setCallback(f);
 
       if(std::find(cameraSerialToSync.begin(),
         cameraSerialToSync.end(), serialNumber) != cameraSerialToSync.end()) {
@@ -144,6 +144,7 @@ int main(int argc, char **argv)
       }
 
       pn->start();
+      cameraIndex++;
     }
 
 

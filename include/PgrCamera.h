@@ -47,6 +47,10 @@
 #include <memory>
 #include <mutex>
 #include <functional>
+#include <thread>
+
+#include <boost/asio.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #define PRINT_ERROR {ROS_ERROR(error.GetDescription());}
 #define PGRERROR_OK FlyCapture2::PGRERROR_OK
@@ -70,10 +74,12 @@ public:
 
 public:
   void start();
+  void onTimerTick(const boost::system::error_code& /*e*/,
+                   boost::asio::deadline_timer* t);
   void stop();
   void initCam();
 
-  static void frameDone(FlyCapture2::Image *frame, const void *pCallbackData);
+  void frameDone(FlyCapture2::Image *frame);
   void setFrameCallback(std::function <void (FlyCapture2::Image *, unsigned int)> callback);
 
   FlyCapture2::PropertyInfo getPropertyInfo(FlyCapture2::PropertyType type);
@@ -127,6 +133,8 @@ public:
   void PrintCameraInfo(FlyCapture2::CameraInfo *pCamInfo);
 
 
+private:
+  void startTimer();
 
 private:
   unsigned int camSerNo;
@@ -139,6 +147,9 @@ private:
   bool callbackEnabled;
   std::function<void(FlyCapture2::Image *, unsigned int)> userCallback;
   std::mutex frameMutex;
+  std::shared_ptr<std::thread> cameraThread;
+  boost::asio::io_service ioTimer;
+  boost::asio::deadline_timer timer;
 };
 
 }

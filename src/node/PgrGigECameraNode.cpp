@@ -14,5 +14,5 @@ void PgrGigECameraNode::configure ( pgr_camera::PgrCameraConfig &config, uint32_
 }
 
 void PgrGigECameraNode::gigeConfigure(pgr_camera::PgrCameraConfig &config, uint32_t level ) {
-  pgrCamera->SetGigESettings ( config.packet_size,  config.packet_delay );
+  // pgrCamera->SetGigESettings ( config.packet_size,  config.packet_delay );
 }
