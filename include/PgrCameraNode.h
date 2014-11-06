@@ -131,7 +131,6 @@ protected:
     sensor_msgs::Image sensorImage;
     sensor_msgs::CameraInfo cameraInfo;
     DiagnosticsData diagnosticsData;
-    static std::mutex globalPublishMutex;
     State state;
 };
 #endif                                                      // PGRCAMERANODE_H

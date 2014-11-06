@@ -150,6 +150,7 @@ private:
   std::shared_ptr<std::thread> cameraThread;
   boost::asio::io_service ioTimer;
   boost::asio::deadline_timer timer;
+  static std::mutex globalPublishMutex;
 };
 
 }

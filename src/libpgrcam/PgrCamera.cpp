@@ -59,6 +59,8 @@ using namespace FlyCapture2;
 
 namespace pgr_camera {
 
+std::mutex PgrCamera::globalPublishMutex;
+
 const boost::posix_time::millisec TIMER_INTERVAL(1000/60);
 
 PgrCamera::PgrCamera(shared_ptr<FlyCapture2::CameraBase > camera,
@@ -143,7 +145,8 @@ void PgrCamera::initCam()
 
 void PgrCamera::startTimer()
 {
-  flyCapCamera->StartCapture();
+  //flyCapCamera->StartCapture();
+
   timer.async_wait(boost::bind(&PgrCamera::onTimerTick, this,
         boost::asio::placeholders::error, &timer));
 
@@ -185,8 +188,11 @@ void PgrCamera::onTimerTick(const boost::system::error_code& /*e*/,
                " (pthread=", pthread_self(), ")"));
 
   FlyCapture2::Image image;
+  std::lock_guard<std::mutex> lock(globalPublishMutex);
+  flyCapCamera->StartCapture();
   flyCapCamera->RetrieveBuffer(&image);
   frameDone(&image);
+  flyCapCamera->StopCapture();
 
   t->expires_at(t->expires_at() + TIMER_INTERVAL);
   t->async_wait(boost::bind(&PgrCamera::onTimerTick, this,

@@ -73,7 +73,6 @@
 
 using namespace Td;
 
-std::mutex PgrCameraNode::globalPublishMutex;
 
 PgrCameraNode::PgrCameraNode(const ros::NodeHandle &nodeHandle,
                              shared_ptr<pgr_camera::PgrCamera> pgrCamera) :
@@ -255,7 +254,6 @@ bool PgrCameraNode::frameToImage(FlyCapture2::Image *frame, sensor_msgs::Image &
 
 bool PgrCameraNode::processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &img, sensor_msgs::CameraInfo &cam_info,  ros::Time timestamp)
 {
-  std::lock_guard<std::mutex> lock(globalPublishMutex);
   img.header.stamp = cam_info.header.stamp = timestamp;
 
   if (!frameToImage(frame, img)) {
