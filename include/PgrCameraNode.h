@@ -127,10 +127,11 @@ protected:
 
     pgr_camera::PgrCameraConfig currentConfig;
 
-    State state;
     std::shared_ptr<pgr_camera::PgrCamera> pgrCamera;
     sensor_msgs::Image sensorImage;
     sensor_msgs::CameraInfo cameraInfo;
     DiagnosticsData diagnosticsData;
+    static std::mutex globalPublishMutex;
+    State state;
 };
 #endif                                                      // PGRCAMERANODE_H

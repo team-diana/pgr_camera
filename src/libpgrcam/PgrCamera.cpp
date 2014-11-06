@@ -37,11 +37,19 @@
 #include "flycapture/Image.h"
 #include "flycapture/CameraBase.h"
 
+#include <team_diana_lib/logging/logging.h>
+#include <team_diana_lib/strings/strings.h>
+
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <mutex>
 #include <functional>
+#include <thread>
+
+// TODO: remove me /
+#include <pthread.h>
+////////////////////
 
 #define SLEEP_TIME 1
 
@@ -54,24 +62,24 @@ PgrCamera::PgrCamera(shared_ptr<FlyCapture2::CameraBase > camera,
                      FlyCapture2::PGRGuid guid,
                      unsigned int serialNumber,
                      FlyCapture2::InterfaceType interfaceType)
-  :  camPGR(camera),
+  :  flyCapCamera(camera),
      guid(guid),
      camSerNo(serialNumber),
      interfaceType(interfaceType),
      callbackEnabled(true)
-{
-
-}
-
+{}
 
 void PgrCamera::frameDone(FlyCapture2::Image * frame, const void *pCallbackData)
 {
+
+  Td::ros_info(Td::toString("frameDone in thread id: ",
+                            this_thread::get_id(),
+               " (pthread=", pthread_self(), ")"));
+
   PgrCamera *camPtr = (PgrCamera *) pCallbackData;
-  if(camPtr->callbackEnabled && !!camPtr->userCallback) {
-    // TODO: thread safety OK here?
-    std::lock_guard<std::mutex> guard(camPtr->frameMutex_);
+  if(camPtr->callbackEnabled && (bool)camPtr->userCallback) {
+    std::lock_guard<std::mutex> guard(camPtr->frameMutex);
     camPtr->userCallback(frame,  camPtr->getCamIndex());
-    //ROS_INFO("in frameDone");
   }
   else {
     ROS_WARN("User callback empty!");
@@ -94,36 +102,36 @@ void PgrCamera::initCam()
 
   // Set to software triggering:
   FlyCapture2::TriggerMode triggerMode;
-  if((error = camPGR->GetTriggerMode(&triggerMode)) != PGRERROR_OK) {
+  if((error = flyCapCamera->GetTriggerMode(&triggerMode)) != PGRERROR_OK) {
     PRINT_ERROR;
   }
 
   // Set camera to trigger mode 0
   triggerMode.onOff = false;
 
-  if((error = camPGR->SetTriggerMode(&triggerMode)) != PGRERROR_OK) {
+  if((error = flyCapCamera->SetTriggerMode(&triggerMode)) != PGRERROR_OK) {
     PRINT_ERROR;
   }
 
   // Set other camera configuration stuff:
   FlyCapture2::FC2Config fc2Config;
-  if((error = camPGR->GetConfiguration(&fc2Config)) != PGRERROR_OK) {
+  if((error = flyCapCamera->GetConfiguration(&fc2Config)) != PGRERROR_OK) {
     PRINT_ERROR;
   }
   fc2Config.grabMode = FlyCapture2::DROP_FRAMES; // supposedly the default, but just in case..
-  if((error = camPGR->SetConfiguration(&fc2Config)) != PGRERROR_OK) {
+  if((error = flyCapCamera->SetConfiguration(&fc2Config)) != PGRERROR_OK) {
     PRINT_ERROR;
   }
   ROS_INFO("Setting video mode to VIDEOMODE_640x480Y8, framerate to FRAMERATE_30...");
 
   FlyCapture2::EmbeddedImageInfo embedInfo;
   embedInfo.frameCounter.onOff = true;
-  if((error = camPGR->SetEmbeddedImageInfo(&embedInfo)) != PGRERROR_OK) {
+  if((error = flyCapCamera->SetEmbeddedImageInfo(&embedInfo)) != PGRERROR_OK) {
     PRINT_ERROR;
   }
 
   FlyCapture2::CameraInfo camInfo;
-  if((error = camPGR->GetCameraInfo(&camInfo)) != PGRERROR_OK) {
+  if((error = flyCapCamera->GetCameraInfo(&camInfo)) != PGRERROR_OK) {
     PRINT_ERROR;
   }
   ROS_INFO("camInfo.driverName = %s", camInfo.driverName);
@@ -134,14 +142,14 @@ void PgrCamera::initCam()
 void PgrCamera::start()
 {
   FlyCapture2::Error error;
-  if(camPGR->IsConnected()) {
+  if(flyCapCamera->IsConnected()) {
     ROS_INFO("IsConnected returned true");
   }
   else {
     ROS_INFO("IsConnected returned false");
   }
 
-  if((error = camPGR->StartCapture(frameDone, (const void *) this)) != PGRERROR_OK) {
+  if((error = flyCapCamera->StartCapture(&PgrCamera::frameDone, (const void *) this)) != PGRERROR_OK) {
     ROS_ERROR(error.GetDescription());
   }
   else {
@@ -152,7 +160,7 @@ void PgrCamera::start()
 void PgrCamera::stop()
 {
   FlyCapture2::Error error;
-  if((error = camPGR->StopCapture()) != PGRERROR_OK) {
+  if((error = flyCapCamera->StopCapture()) != PGRERROR_OK) {
     PRINT_ERROR;
   }
 }
@@ -184,7 +192,7 @@ void PgrCamera::SetExposure(bool _auto, bool onoff, unsigned int value)
   prop.autoManualMode = _auto;
   prop.onOff = onoff;
   prop.valueA = value;
-  if((error = camPGR->SetProperty(&prop)) != PGRERROR_OK) {
+  if((error = flyCapCamera->SetProperty(&prop)) != PGRERROR_OK) {
     ROS_ERROR(error.GetDescription());
   }
 }
@@ -197,7 +205,7 @@ void PgrCamera::SetGain(bool _auto, float value)
   prop.autoManualMode = _auto;
   prop.onOff = true;
   prop.absValue = value;
-  if((error = camPGR->SetProperty(&prop)) != PGRERROR_OK) {
+  if((error = flyCapCamera->SetProperty(&prop)) != PGRERROR_OK) {
     ROS_ERROR(error.GetDescription());
   }
 
@@ -213,7 +221,7 @@ void PgrCamera::SetShutter(bool _auto, float value)
   prop.autoManualMode = _auto;
   prop.onOff = true;
   prop.absValue = value;
-  if((error = camPGR->SetProperty(&prop)) != PGRERROR_OK) {
+  if((error = flyCapCamera->SetProperty(&prop)) != PGRERROR_OK) {
     //ROS_ERROR (error.GetDescription());
     ROS_ERROR("Unable to set binning");
   }
@@ -238,7 +246,7 @@ void PgrCamera::SetFrameRate(bool automatic,  float value)
 
 
   ROS_INFO("Trying to set frame rate to %f: automatic is on: %d", value, automatic);
-  if((error = camPGR->SetProperty(&prop)) != PGRERROR_OK) {
+  if((error = flyCapCamera->SetProperty(&prop)) != PGRERROR_OK) {
     ROS_ERROR("Unable to set framerate:");
     ROS_ERROR(error.GetDescription());
   }
@@ -261,7 +269,7 @@ GigECamera* PgrCamera::castToGigECamera(CameraBase* cameraBase)
 {
   Error error;
   ROS_INFO("Casting to GigE");
-  GigECamera* gigeCamera = dynamic_cast<GigECamera*>(camPGR.get());
+  GigECamera* gigeCamera = dynamic_cast<GigECamera*>(flyCapCamera.get());
   if(gigeCamera == 0) {
     ROS_INFO("camera is not a GigE camera");
   }
@@ -273,7 +281,7 @@ GigEImageSettings PgrCamera::getCurrentGigEImageSettings()
   using namespace FlyCapture2;
   Error error;
   GigEImageSettings imageSettings;
-  GigECamera* gigeCamera = castToGigECamera(camPGR.get());
+  GigECamera* gigeCamera = castToGigECamera(flyCapCamera.get());
   if(!gigeCamera) {
     ROS_ERROR("Impossible to get current GigE settings");
     return imageSettings;
@@ -301,7 +309,7 @@ unsigned int PgrCamera::getGigEProperty(GigEProperty gigeProperty)
   using namespace FlyCapture2;
   Error error;
 
-  GigECamera* gigeCamera = castToGigECamera(camPGR.get());
+  GigECamera* gigeCamera = castToGigECamera(flyCapCamera.get());
   if(!gigeCamera) {
     ROS_ERROR("Unable to get GigE property");
     return 0;
@@ -322,7 +330,7 @@ void PgrCamera::SetGigESettings(unsigned int packetSize,  unsigned int packetDel
   using namespace FlyCapture2;
   Error error;
 
-  GigECamera* gigeCamera = castToGigECamera(camPGR.get());
+  GigECamera* gigeCamera = castToGigECamera(flyCapCamera.get());
   if(!gigeCamera) {
     ROS_ERROR("Unable to set GigE settings. This is not a GigE camera");
     return;
@@ -381,7 +389,7 @@ PropertyInfo PgrCamera::getPropertyInfo(FlyCapture2::PropertyType type)
   FlyCapture2::Error error;
   FlyCapture2::PropertyInfo info;
   info.type = type;
-  error = camPGR->GetPropertyInfo(&info);
+  error = flyCapCamera->GetPropertyInfo(&info);
   if(error != PGRERROR_OK) {
     ROS_ERROR(error.GetDescription());
   }
@@ -394,7 +402,7 @@ float PgrCamera::GetFrameRate()
   FlyCapture2::Property frmRate;
   FlyCapture2::Error error;
   frmRate.type = FlyCapture2::FRAME_RATE;
-  error = camPGR->GetProperty(&frmRate);
+  error = flyCapCamera->GetProperty(&frmRate);
   if(error != PGRERROR_OK) {
     ROS_ERROR(error.GetDescription());
     return -1;
