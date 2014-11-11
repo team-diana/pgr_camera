@@ -266,6 +266,11 @@ bool PgrCameraNode::processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &
   return true;
 }
 
+void PgrCameraNode::retrieveFrame()
+{
+  pgrCamera->retrieveFrame();
+}
+
 void PgrCameraNode::publishImage(FlyCapture2::Image *frame, int camIndex)
 {
   ros::Time timestamp = ros::Time::now();

@@ -79,6 +79,7 @@ public:
   void stop();
   void initCam();
 
+  void retrieveFrame();
   void frameDone(FlyCapture2::Image *frame);
   void setFrameCallback(std::function <void (FlyCapture2::Image *, unsigned int)> callback);
 

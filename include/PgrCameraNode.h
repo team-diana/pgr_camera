@@ -76,6 +76,8 @@ public:
 
     DynamicReconfigureServer& getDynamicReconfigureServer();
 
+    // Force frame retrieval (callback will be called)
+    void retrieveFrame();
     void publishImage ( FlyCapture2::Image *frame, int camIndex );
     void publishImageWithTimestamp ( FlyCapture2::Image *frame, int camIndex,  ros::Time timestamp );
     void overrideFrameCallback ( std::function <void ( FlyCapture2::Image *, unsigned int ) > callback );

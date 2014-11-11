@@ -149,13 +149,20 @@ int main(int argc, char **argv)
 
 
     ros_info("All camera initialized");
-    CameraSynchronizer cameraSynchronizer(camerasToSync);
-    ros::spin();
+   // CameraSynchronizer cameraSynchronizer(camerasToSync);
+
+    //ros::spin();
   }
   catch
     (std::runtime_error &e) {
     ROS_FATAL("Uncaught exception: '%s', aborting.", e.what());
     ROS_BREAK();
+  }
+
+  while(true) {
+    for(auto cam : cameraNodes) {
+      cam->retrieveFrame();
+    }
   }
 
   return 0;
