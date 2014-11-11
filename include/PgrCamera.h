@@ -81,10 +81,13 @@ public:
 
   void retrieveFrame();
   void frameDone(FlyCapture2::Image *frame);
+  void updateFrameStatistics();
   void setFrameCallback(std::function <void (FlyCapture2::Image *, unsigned int)> callback);
 
   FlyCapture2::PropertyInfo getPropertyInfo(FlyCapture2::PropertyType type);
 
+  void reset();
+  void setPower(bool enabled);
   FlyCapture2::GigECamera* castToGigECamera(FlyCapture2::CameraBase* cameraBase);
   FlyCapture2::GigEImageSettings getCurrentGigEImageSettings();
   unsigned int getGigEProperty(FlyCapture2::GigEProperty gigeProperty);
@@ -147,7 +150,7 @@ private:
   FlyCapture2::InterfaceType interfaceType;
   bool callbackEnabled;
   std::function<void(FlyCapture2::Image *, unsigned int)> userCallback;
-  std::mutex frameMutex;
+  std::mutex cameraMutex;
   std::shared_ptr<std::thread> cameraThread;
   boost::asio::io_service ioTimer;
   boost::asio::deadline_timer timer;

@@ -82,14 +82,12 @@ void PgrCamera::frameDone(FlyCapture2::Image * frame)
                             " (pthread=", pthread_self(), ")"));
 
   if(callbackEnabled && (bool)userCallback) {
-//     std::lock_guard<std::mutex> guard(frameMutex);
     userCallback(frame,  getCamIndex());
   }
   else {
     ROS_WARN("User callback empty!");
   }
 }
-
 
 void PgrCamera::setFrameCallback(std::function<void (FlyCapture2::Image *, unsigned int) > callback)
 {
@@ -180,10 +178,7 @@ void PgrCamera::onTimerTick(const boost::system::error_code& /*e*/,
   Td::ros_info(Td::toString("onTimerTick for camera ", getSerialNumber() , " in thread id: ",
                             this_thread::get_id(),
                             " (pthread=", pthread_self(), ")"));
-
-  std::lock_guard<std::mutex> lock(globalPublishMutex);
   retrieveFrame();
-
   t->expires_at(t->expires_at() + TIMER_INTERVAL);
   t->async_wait(boost::bind(&PgrCamera::onTimerTick, this,
                             boost::asio::placeholders::error, t));
@@ -191,18 +186,32 @@ void PgrCamera::onTimerTick(const boost::system::error_code& /*e*/,
 
 void PgrCamera::retrieveFrame()
 {
-  flyCapCamera->StartCapture();
+  FlyCapture2::Error error;
+
+  std::lock_guard<std::mutex> guard(cameraMutex);
+  flyCapCamera->StopCapture();
+  if((error = flyCapCamera->StartCapture()) != PGRERROR_OK) {
+    Td::ros_error(Td::toString("Error StartCapture for camera: ", getSerialNumber()
+                               , " : " , error.GetDescription()));
+    return;
+  }
+
   Td::ros_info(Td::toString("retrieving frame of camera ", getSerialNumber()));
   FlyCapture2::Image image;
-  auto error = flyCapCamera->RetrieveBuffer(&image);
+   flyCapCamera->RetrieveBuffer(&image);
   if(error != PGRERROR_OK) {
     Td::ros_error(Td::toString("Error for camera: ", getSerialNumber()
                                , " : " , error.GetDescription()));
+    flyCapCamera->StopCapture();
   }
   else {
+    Td::ros_info("frame ok ");
     frameDone(&image);
   }
-  flyCapCamera->StopCapture();
+  if((error = flyCapCamera->StopCapture()) != PGRERROR_OK) {
+    Td::ros_error(Td::toString("Error StopCapture for camera : ", getSerialNumber()
+                               , " : " , error.GetDescription()));
+  }
 }
 
 
@@ -313,6 +322,28 @@ void PgrCamera::SetGigEPacketDelay(unsigned int packetDelay)
   SetGigESettings(getCurrentPacketDelay(),  packetDelay);
 }
 
+void PgrCamera::reset()
+{
+  std::lock_guard<std::mutex> guard(cameraMutex);
+  setPower(false);
+  setPower(true);
+}
+
+void PgrCamera::setPower(bool enabled)
+{
+  const unsigned int powerReg = 0x610;
+  unsigned int powerRegVal = 0 ;
+
+      powerRegVal = (enabled == true) ? 0x80000000 : 0x0;
+
+  Error error = castToGigECamera(flyCapCamera.get())->WriteRegister( powerReg, powerRegVal );
+  if ( error != PGRERROR_OK )
+  {
+    ROS_ERROR("Unable to set camera power : %s", error.GetDescription());
+    return;
+  }
+}
+
 
 GigECamera* PgrCamera::castToGigECamera(CameraBase* cameraBase)
 {
@@ -324,6 +355,8 @@ GigECamera* PgrCamera::castToGigECamera(CameraBase* cameraBase)
   }
   return gigeCamera;
 }
+
+
 
 GigEImageSettings PgrCamera::getCurrentGigEImageSettings()
 {

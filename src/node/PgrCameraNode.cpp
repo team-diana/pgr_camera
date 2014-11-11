@@ -70,6 +70,7 @@
 #include "PgrCameraNode.h"
 #include "CameraSynchronizer.h"
 #include <team_diana_lib/logging/logging.h>
+#include <team_diana_lib/strings/strings.h>
 
 using namespace Td;
 
@@ -200,7 +201,7 @@ void PgrCameraNode::setup()
   state = STOP;
   ros_info("Setup done");
 
-  //setupConfigure();
+  setupConfigure();
 }
 
 void PgrCameraNode::start()
@@ -262,7 +263,6 @@ bool PgrCameraNode::processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &
   cam_info.height = img.height;
   cam_info.width = img.width;
 
-  diagnosticsData.frameCount++;
   return true;
 }
 
@@ -271,9 +271,23 @@ void PgrCameraNode::retrieveFrame()
   pgrCamera->retrieveFrame();
 }
 
+void PgrCameraNode::updatePublishStatistics()
+{
+  diagnosticsData.frameCount++;
+  diagnosticsData.lastFrameTime = boost::posix_time::microsec_clock::local_time();
+}
+
+bool PgrCameraNode::reset()
+{
+  pgrCamera->reset();
+}
+
 void PgrCameraNode::publishImage(FlyCapture2::Image *frame, int camIndex)
 {
   ros::Time timestamp = ros::Time::now();
+
+  updatePublishStatistics();
+
   publishImageWithTimestamp(frame,  camIndex,  timestamp);
 }
 
@@ -324,9 +338,9 @@ void PgrCameraNode::loadIntrinsics(string inifile, unsigned int cameraSerialNumb
   if (getcwd(cwd, sizeof(cwd)) != NULL) {
     ROS_INFO("Searching intrinsics %s file in %s", inifile.c_str(),  cwd);
   }
-  std::string cameraName;
+  std::string cameraName = Td::toString(cameraSerialNumber);
 
-  ROS_INFO("Loading calibration for camera %d",  cameraSerialNumber);
+  ROS_INFO("Loading calibration for camera %d with name %s",  cameraSerialNumber, cameraName.c_str());
   ifstream fin(inifile.c_str());
   if (fin.is_open()) {
     if (camera_calibration_parsers::readCalibrationIni(inifile, cameraName, cameraInfo)) {

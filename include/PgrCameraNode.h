@@ -35,6 +35,7 @@
 #include <sys/stat.h>
 #include <cstdlib>
 #include <unistd.h>
+#include <boost/date_time.hpp>
 
 typedef dynamic_reconfigure::Server < pgr_camera::PgrCameraConfig > DynamicReconfigureServer;
 
@@ -57,6 +58,7 @@ class PgrCameraNode
         int publishedCount;
         int oneshotCount;
         int oneshotCountMax;
+        boost::posix_time::ptime lastFrameTime;
     };
 
 
@@ -78,6 +80,8 @@ public:
 
     // Force frame retrieval (callback will be called)
     void retrieveFrame();
+    void updatePublishStatistics();
+    bool reset();
     void publishImage ( FlyCapture2::Image *frame, int camIndex );
     void publishImageWithTimestamp ( FlyCapture2::Image *frame, int camIndex,  ros::Time timestamp );
     void overrideFrameCallback ( std::function <void ( FlyCapture2::Image *, unsigned int ) > callback );
@@ -106,6 +110,8 @@ public:
         state = ONE_SHOT;
     }
 
+    DiagnosticsData diagnosticsData;
+
 protected:
     bool frameToImage ( FlyCapture2::Image *frame, sensor_msgs::Image &image );
     bool processFrame ( FlyCapture2::Image *frame, sensor_msgs::Image &img, sensor_msgs::CameraInfo &cam_info,  ros::Time timestamp );
@@ -126,13 +132,10 @@ protected:
 
     camera_info_manager::CameraInfoManager cameraInfoManager;
     DynamicReconfigureServer dynamicReconfigureServer;
-
     pgr_camera::PgrCameraConfig currentConfig;
-
     std::shared_ptr<pgr_camera::PgrCamera> pgrCamera;
     sensor_msgs::Image sensorImage;
     sensor_msgs::CameraInfo cameraInfo;
-    DiagnosticsData diagnosticsData;
     State state;
 };
 #endif                                                      // PGRCAMERANODE_H
