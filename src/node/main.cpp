@@ -160,7 +160,9 @@ int main(int argc, char **argv)
   }
 
   while(true) {
-    for(auto cam : cameraNodes) {
+    ros::Time timestamp = ros::Time::now();
+    for(std::shared_ptr<PgrCameraNode>& cam : cameraNodes) {
+      cam->nextTimestamp = timestamp;
       cam->retrieveFrame();
     }
   }

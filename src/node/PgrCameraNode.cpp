@@ -284,11 +284,9 @@ bool PgrCameraNode::reset()
 
 void PgrCameraNode::publishImage(FlyCapture2::Image *frame, int camIndex)
 {
-  ros::Time timestamp = ros::Time::now();
-
   updatePublishStatistics();
 
-  publishImageWithTimestamp(frame,  camIndex,  timestamp);
+  publishImageWithTimestamp(frame,  camIndex,  nextTimestamp);
 }
 
 void PgrCameraNode::overrideFrameCallback(std::function < void (FlyCapture2::Image *, unsigned int)  > callback)

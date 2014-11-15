@@ -111,6 +111,7 @@ public:
     }
 
     DiagnosticsData diagnosticsData;
+    ros::Time nextTimestamp;
 
 protected:
     bool frameToImage ( FlyCapture2::Image *frame, sensor_msgs::Image &image );
