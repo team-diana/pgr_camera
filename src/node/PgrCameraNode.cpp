@@ -163,7 +163,13 @@ void PgrCameraNode::baseConfigure(pgr_camera::PgrCameraConfig &config,  uint32_t
 
   float frameRate = pgrCamera->GetFrameRate();
   ROS_INFO("Current framerate is: %f",  frameRate);
-  pgrCamera->SetFrameRate(false, (float) config.frame_rate);
+  pgrCamera->SetFrameRate(false, (float) 10);
+
+//   pgrCamera->SetGigEPacketSize(config.packet_size);
+//
+//   config.packet_delay = (pgrCamera->getCamIndex()+1) * 1500;
+//   ROS_WARN("Overriding packet delay with: %d",  config.packet_delay);
+//   pgrCamera->SetGigEPacketDelay(config.packet_delay);
 
   sensorImage.header.frame_id = cameraInfo.header.frame_id = config.frame_id;
 
@@ -280,6 +286,7 @@ void PgrCameraNode::updatePublishStatistics()
 bool PgrCameraNode::reset()
 {
   pgrCamera->reset();
+  return true;
 }
 
 void PgrCameraNode::publishImage(FlyCapture2::Image *frame, int camIndex)

@@ -102,35 +102,35 @@ void PgrCamera::initCam()
   FlyCapture2::Error error;
   FlyCapture2::PGRGuid guid;
 
-  // Set to software triggering:
-  FlyCapture2::TriggerMode triggerMode;
-  if((error = flyCapCamera->GetTriggerMode(&triggerMode)) != PGRERROR_OK) {
-    PRINT_ERROR;
-  }
+//   // Set to software triggering:
+//   FlyCapture2::TriggerMode triggerMode;
+//   if((error = flyCapCamera->GetTriggerMode(&triggerMode)) != PGRERROR_OK) {
+//     PRINT_ERROR;
+//   }
+//
+//   // Set camera to trigger mode 0
+//   triggerMode.onOff = false;
+//
+//   if((error = flyCapCamera->SetTriggerMode(&triggerMode)) != PGRERROR_OK) {
+//     PRINT_ERROR;
+//   }
+//
+//   // Set other camera configuration stuff:
+//   FlyCapture2::FC2Config fc2Config;
+//   if((error = flyCapCamera->GetConfiguration(&fc2Config)) != PGRERROR_OK) {
+//     PRINT_ERROR;
+//   }
+//   fc2Config.grabMode = FlyCapture2::DROP_FRAMES; // supposedly the default, but just in case..
+//   if((error = flyCapCamera->SetConfiguration(&fc2Config)) != PGRERROR_OK) {
+//     PRINT_ERROR;
+//   }
+//   ROS_INFO("Setting video mode to VIDEOMODE_640x480Y8, framerate to FRAMERATE_30...");
 
-  // Set camera to trigger mode 0
-  triggerMode.onOff = false;
-
-  if((error = flyCapCamera->SetTriggerMode(&triggerMode)) != PGRERROR_OK) {
-    PRINT_ERROR;
-  }
-
-  // Set other camera configuration stuff:
-  FlyCapture2::FC2Config fc2Config;
-  if((error = flyCapCamera->GetConfiguration(&fc2Config)) != PGRERROR_OK) {
-    PRINT_ERROR;
-  }
-  fc2Config.grabMode = FlyCapture2::DROP_FRAMES; // supposedly the default, but just in case..
-  if((error = flyCapCamera->SetConfiguration(&fc2Config)) != PGRERROR_OK) {
-    PRINT_ERROR;
-  }
-  ROS_INFO("Setting video mode to VIDEOMODE_640x480Y8, framerate to FRAMERATE_30...");
-
-  FlyCapture2::EmbeddedImageInfo embedInfo;
-  embedInfo.frameCounter.onOff = true;
-  if((error = flyCapCamera->SetEmbeddedImageInfo(&embedInfo)) != PGRERROR_OK) {
-    PRINT_ERROR;
-  }
+//   FlyCapture2::EmbeddedImageInfo embedInfo;
+//   embedInfo.frameCounter.onOff = true;
+//   if((error = flyCapCamera->SetEmbeddedImageInfo(&embedInfo)) != PGRERROR_OK) {
+//     PRINT_ERROR;
+//   }
 
   FlyCapture2::CameraInfo camInfo;
   if((error = flyCapCamera->GetCameraInfo(&camInfo)) != PGRERROR_OK) {
@@ -162,56 +162,63 @@ void PgrCamera::start()
     ROS_INFO("IsConnected returned false");
   }
 
-//   cameraThread = std::shared_ptr<std::thread>(new std::thread(&PgrCamera::startTimer, this));
-//
-  if((error = flyCapCamera->StartCapture()) != PGRERROR_OK) {
-    ROS_ERROR(error.GetDescription());
+  FlyCapture2::GigECamera* gigeCam = static_cast<FlyCapture2::GigECamera*>(flyCapCamera.get());
+  FlyCapture2::GigEProperty prop;
+
+  prop.propType = FlyCapture2::PACKET_SIZE;
+  prop.value = 5000;
+  if( (error = gigeCam->SetGigEProperty(&prop)) != PGRERROR_OK) {
+    ROS_ERROR("error while setting packet size: %s", error.GetDescription());
   }
-  else {
-    ROS_INFO("StartCapture succeeded.");
+
+  prop.propType = FlyCapture2::PACKET_DELAY;
+  prop.value = 1000;
+  if( (error = gigeCam->SetGigEProperty(&prop)) != PGRERROR_OK) {
+    ROS_ERROR("error while setting packet delay: %s", error.GetDescription());
   }
+
+//   if((error = flyCapCamera->StartCapture()) != PGRERROR_OK) {
+//     ROS_ERROR(error.GetDescription());
+//   }
+//   else {
+//     ROS_INFO("StartCapture succeeded.");
+//   }
 }
 
 void PgrCamera::onTimerTick(const boost::system::error_code& /*e*/,
                             boost::asio::deadline_timer* t)
 {
-  Td::ros_info(Td::toString("onTimerTick for camera ", getSerialNumber() , " in thread id: ",
-                            this_thread::get_id(),
-                            " (pthread=", pthread_self(), ")"));
-  retrieveFrame();
-  t->expires_at(t->expires_at() + TIMER_INTERVAL);
-  t->async_wait(boost::bind(&PgrCamera::onTimerTick, this,
-                            boost::asio::placeholders::error, t));
+//   Td::ros_info(Td::toString("onTimerTick for camera ", getSerialNumber() , " in thread id: ",
+//                             this_thread::get_id(),
+//                             " (pthread=", pthread_self(), ")"));
+//   retrieveFrame();
+//   t->expires_at(t->expires_at() + TIMER_INTERVAL);
+//   t->async_wait(boost::bind(&PgrCamera::onTimerTick, this,
+//                             boost::asio::placeholders::error, t));
 }
 
 void PgrCamera::retrieveFrame()
 {
   FlyCapture2::Error error;
 
-  std::lock_guard<std::mutex> guard(cameraMutex);
-  flyCapCamera->StopCapture();
-  if((error = flyCapCamera->StartCapture()) != PGRERROR_OK) {
-    Td::ros_error(Td::toString("Error StartCapture for camera: ", getSerialNumber()
-                               , " : " , error.GetDescription()));
-    return;
-  }
-
   Td::ros_info(Td::toString("retrieving frame of camera ", getSerialNumber()));
+
+  flyCapCamera->StartCapture();
+
   FlyCapture2::Image image;
-   flyCapCamera->RetrieveBuffer(&image);
+  error = flyCapCamera->RetrieveBuffer(&image);
+
   if(error != PGRERROR_OK) {
     Td::ros_error(Td::toString("Error for camera: ", getSerialNumber()
                                , " : " , error.GetDescription()));
-    flyCapCamera->StopCapture();
   }
   else {
     Td::ros_info("frame ok ");
     frameDone(&image);
   }
-  if((error = flyCapCamera->StopCapture()) != PGRERROR_OK) {
-    Td::ros_error(Td::toString("Error StopCapture for camera : ", getSerialNumber()
-                               , " : " , error.GetDescription()));
-  }
+
+  flyCapCamera->StopCapture();
+ 
 }
 
 
@@ -312,14 +319,14 @@ void PgrCamera::SetFrameRate(bool automatic,  float value)
 
 void PgrCamera::SetGigEPacketSize(unsigned int packetSize)
 {
-  ROS_INFO("Current Packet Size: %d",  getCurrentPacketSize());
-  SetGigESettings(packetSize,  getCurrentPacketDelay());
+//   ROS_INFO("Current Packet Size: %d",  getCurrentPacketSize());
+//   SetGigESettings(packetSize,  getCurrentPacketDelay());
 }
 
 void PgrCamera::SetGigEPacketDelay(unsigned int packetDelay)
 {
-  ROS_INFO("Current Packet Delay: %d",  getCurrentPacketDelay());
-  SetGigESettings(getCurrentPacketDelay(),  packetDelay);
+//   ROS_INFO("Current Packet Delay: %d",  getCurrentPacketDelay());
+//   SetGigESettings(getCurrentPacketDelay(),  packetDelay);
 }
 
 void PgrCamera::reset()
@@ -409,61 +416,47 @@ unsigned int PgrCamera::getGigEProperty(GigEProperty gigeProperty)
 
 void PgrCamera::SetGigESettings(unsigned int packetSize,  unsigned int packetDelay)
 {
-  using namespace FlyCapture2;
-  Error error;
-
-  GigECamera* gigeCamera = castToGigECamera(flyCapCamera.get());
-  if(!gigeCamera) {
-    ROS_ERROR("Unable to set GigE settings. This is not a GigE camera");
-    return;
-  }
-
-  ROS_INFO("Current packet size : %u delay: %u ", getCurrentPacketSize(), getCurrentPacketDelay());
-
-  error = gigeCamera->StopCapture();
-  bool restartCamera;
-  if(error != PGRERROR_OK) {    //&& error != PGRERROR_NOT_STARTED )
-    ROS_ERROR("unable to stop capture");
-    ROS_ERROR(error.GetDescription());
-    restartCamera = false;
-    return;
-  }
-  else {
-    restartCamera = true;
-  }
-  sleep(SLEEP_TIME);
-
-  // Set the packet size and delay to the camera
-  GigEProperty packetSizeProp;
-  packetSizeProp.propType = PACKET_SIZE;
-  packetSizeProp.value = packetSize;
-  error = gigeCamera->SetGigEProperty(&packetSizeProp);
-  if(error != PGRERROR_OK) {
-    ROS_ERROR("Unable to set packet size");
-    PRINT_ERROR(error);
-    return;
-  }
-
-  sleep(SLEEP_TIME);
-
-  GigEProperty packetDelayProp;
-  packetDelayProp.propType = PACKET_DELAY;
-  packetDelayProp.value = packetDelay;
-  error = gigeCamera->SetGigEProperty(&packetDelayProp);
-  if(error != PGRERROR_OK) {
-    ROS_ERROR("Unable to set packet delay");
-    PRINT_ERROR(error);
-    return;
-  }
-
-  sleep(SLEEP_TIME);
-
-  if(restartCamera == true) {
-    start();
-  }
-
-  ROS_INFO("GigE settings set");
-  sleep(SLEEP_TIME);
+//   using namespace FlyCapture2;
+//   Error error;
+//
+//   GigECamera* gigeCamera = castToGigECamera(flyCapCamera.get());
+//   if(!gigeCamera) {
+//     ROS_ERROR("Unable to set GigE settings. This is not a GigE camera");
+//     return;
+//   }
+//
+//   ROS_INFO("Current packet size : %u delay: %u ", getCurrentPacketSize(), getCurrentPacketDelay());
+//
+//   sleep(SLEEP_TIME);
+//   error = gigeCamera->StopCapture();
+//   sleep(SLEEP_TIME);
+//
+//   // Set the packet size and delay to the camera
+//   GigEProperty packetSizeProp;
+//   packetSizeProp.propType = PACKET_SIZE;
+//   packetSizeProp.value = packetSize;
+//   error = gigeCamera->SetGigEProperty(&packetSizeProp);
+//   if(error != PGRERROR_OK) {
+//     ROS_ERROR("Unable to set packet size");
+//     PRINT_ERROR(error);
+//     return;
+//   }
+//
+//   sleep(SLEEP_TIME);
+//   GigEProperty packetDelayProp;
+//   packetDelayProp.propType = PACKET_DELAY;
+//   packetDelayProp.value = packetDelay;
+//   error = gigeCamera->SetGigEProperty(&packetDelayProp);
+//   if(error != PGRERROR_OK) {
+//     ROS_ERROR("Unable to set packet delay");
+//     PRINT_ERROR(error);
+//     return;
+//   }
+//
+//   sleep(SLEEP_TIME);
+//   gigeCamera->StartCapture();
+//   ROS_INFO("GigE settings set");
+//   sleep(SLEEP_TIME);
 }
 
 PropertyInfo PgrCamera::getPropertyInfo(FlyCapture2::PropertyType type)

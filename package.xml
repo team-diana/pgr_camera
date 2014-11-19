@@ -16,8 +16,10 @@
 	</export>
    <build_depend>dynamic_reconfigure</build_depend>
    <build_depend>message_generation</build_depend>
+   <build_depend>team_diana_lib</build_depend>
    <run_depend>dynamic_reconfigure</run_depend>
    <run_depend>message_runtime</run_depend>
+   <run_depend>team_diana_lib</run_depend>
 	<buildtool_depend>catkin</buildtool_depend>
 </package>
 

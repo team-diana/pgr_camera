@@ -30,6 +30,7 @@
 #include <thread>
 #include <unistd.h>
 #include <boost/program_options.hpp>
+#include <unistd.h>
 
 using namespace Td;
 
@@ -143,6 +144,8 @@ int main(int argc, char **argv)
         camerasToSync.push_back(pn);
       }
 
+      usleep(150);
+
       pn->start();
       cameraIndex++;
     }
@@ -163,6 +166,7 @@ int main(int argc, char **argv)
     ros::Time timestamp = ros::Time::now();
     for(std::shared_ptr<PgrCameraNode>& cam : cameraNodes) {
       cam->nextTimestamp = timestamp;
+      usleep(30);
       cam->retrieveFrame();
     }
   }
