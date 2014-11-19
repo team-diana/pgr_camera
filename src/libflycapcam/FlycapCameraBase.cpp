@@ -152,6 +152,143 @@ FlycapResult FlycapCameraBase::setFrameRate(bool automatic, float value)
   return FlycapResult(error);
 }
 
+FlycapResult FlycapCameraBase::getBandwidthAllocation(FlyCapture2::BandwidthAllocation& bandwidthAllocation) const
+{
+  FC2Config config;
+  Error error;
+
+  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+    bandwidthAllocation = config.bandwidthAllocation;
+  }
+
+  return FlycapResult(error);
+}
+
+FlycapResult FlycapCameraBase::getAsyncBusSpeed(BusSpeed& busSpeed) const
+{
+  FC2Config config;
+  Error error;
+
+  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+    busSpeed = config.asyncBusSpeed;
+  }
+
+  return FlycapResult(error);
+}
+
+FlycapResult FlycapCameraBase::getGrabMode(GrabMode& grabMode) const
+{
+  FC2Config config;
+  Error error;
+
+  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+    grabMode = config.grabMode;
+  }
+
+  return FlycapResult(error);
+}
+
+
+FlycapResult FlycapCameraBase::getGrabTimeout(int& grabTimeout) const
+{
+  FC2Config config;
+  Error error;
+
+  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+    grabTimeout = config.grabTimeout;
+  }
+
+  return FlycapResult(error);
+}
+
+FlycapResult FlycapCameraBase::getNumBuffers(unsigned int& numBuffers) const
+{
+  FC2Config config;
+  Error error;
+
+  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+    numBuffers = config.numBuffers;
+  }
+
+  return FlycapResult(error);
+}
+
+FlycapResult FlycapCameraBase::isHighPerformanceRetrieveBufferEnabled(bool& enabled) const
+{
+  FC2Config config;
+  Error error;
+
+  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+    enabled = config.highPerformanceRetrieveBuffer;
+  }
+
+  return FlycapResult(error);
+}
+
+FlycapResult FlycapCameraBase::updateConfigParameterHelper(std::function< FC2Config (const FC2Config&)> update)
+{
+  FC2Config config;
+  Error error;
+
+  if((error = getCamera().GetConfiguration(&config)) != PGRERROR_OK) {
+    return FlycapResult(error);
+  }
+
+  FC2Config newConfig = update(config);
+
+  error = getCamera().SetConfiguration(&newConfig);
+  return FlycapResult(error);
+}
+
+
+FlycapResult FlycapCameraBase::setBandwidthAllocation(BandwidthAllocation bandwidthAllocation)
+{
+  return updateConfigParameterHelper([bandwidthAllocation](FC2Config config) {
+    config.bandwidthAllocation = bandwidthAllocation;
+    return config;
+  });
+}
+
+FlycapResult FlycapCameraBase::setAsyncBusSpeed(BusSpeed busSpeed)
+{
+  return updateConfigParameterHelper([busSpeed](FC2Config config) {
+    config.asyncBusSpeed = busSpeed;
+    return config;
+  });
+}
+
+FlycapResult FlycapCameraBase::setGrabMode(GrabMode grabMode)
+{
+  return updateConfigParameterHelper([grabMode](FC2Config config) {
+    config.grabMode = grabMode;
+    return config;
+  });
+}
+
+FlycapResult FlycapCameraBase::setGrabTimeout(int grabTimeout)
+{
+  return updateConfigParameterHelper([grabTimeout](FC2Config config) {
+    config.grabTimeout = grabTimeout;
+    return config;
+  });
+}
+
+FlycapResult FlycapCameraBase::setHighPerformanceRetrieveBufferEnabled(bool enabled)
+{
+  return updateConfigParameterHelper([enabled](FC2Config config) {
+    config.highPerformanceRetrieveBuffer = enabled;
+    return config;
+  });
+}
+
+FlycapResult FlycapCameraBase::setNumBuffers(int numBuffers)
+{
+  return updateConfigParameterHelper([numBuffers](FC2Config config) {
+    config.numBuffers = numBuffers;
+    return config;
+  });
+}
+
 PGRGuid FlycapCameraBase::getGuid() const
 {
   return guid;

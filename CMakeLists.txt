@@ -58,7 +58,7 @@ catkin_package(
 #this is orrbly wrong!!!! erase me
 include_directories(./include/  ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_PATH})
 # ---------
-add_library(pgr_camera src/libflycapcam/FlycapCameraBase.cpp)
+add_library(pgr_camera src/libflycapcam/FlycapCameraBase.cpp src/libflycapcam/FlycapCameraGigE.cpp)
 # add_library(pgr_camera src/libpgrcam/PgrCamera.cpp src/libpgrcam/PgrCameraFactory.cpp)
 # add_executable(pgr_camera_node src/node/main.cpp src/node/PgrCameraNode.cpp
 #               src/node/PgrGigECameraNode.cpp src/node/CameraSynchronizer.cpp)

@@ -12,6 +12,11 @@ struct Binning {
     unsigned int y;
 };
 
+struct GigEPacketParams {
+    unsigned int size;
+    unsigned int delay;
+};
+
 
 class FlycapResult {
 

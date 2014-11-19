@@ -218,7 +218,7 @@ void PgrCamera::retrieveFrame()
   }
 
   flyCapCamera->StopCapture();
- 
+
 }
 
 

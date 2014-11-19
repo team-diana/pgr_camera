@@ -69,7 +69,7 @@ public:
   void start() override;
   void stop() override;
 
-  FlyCapture2::Image retrieveFrame() override;
+  FlycapResult retrieveFrame(FlyCapture2::Image& image) override;
   FlycapResult getExposure(unsigned int& value) const override;
   FlycapResult getGain(float& value) const override;
   FlycapResult getShutter(float& value) const override;
@@ -80,18 +80,35 @@ public:
   FlycapResult setShutter(bool automatic, float value = 0.015) override;
   FlycapResult setFrameRate(bool automatic,  float value = 60) override;
 
+  FlycapResult getAsyncBusSpeed(FlyCapture2::BusSpeed& busSpeed) const override;
+  FlycapResult getGrabMode(FlyCapture2::GrabMode& grabMode) const override;
+  FlycapResult getGrabTimeout(int& grabTimeout) const override;
+  FlycapResult getBandwidthAllocation(FlyCapture2::BandwidthAllocation& bandwidthAllocation) const override;
+  FlycapResult isHighPerformanceRetrieveBufferEnabled(bool& enabled) const override;
+  FlycapResult getNumBuffers(unsigned int& numBuffers) const override;
+
+  FlycapResult setAsyncBusSpeed(FlyCapture2::BusSpeed busSpeed) override;
+  FlycapResult setGrabMode(FlyCapture2::GrabMode grabMode) override;
+  FlycapResult setGrabTimeout(int grabTimeout) override;
+  FlycapResult setBandwidthAllocation(FlyCapture2::BandwidthAllocation bandwidthAllocation) override;
+  FlycapResult setHighPerformanceRetrieveBufferEnabled(bool enabled) override;
+  FlycapResult setNumBuffers(int numBuffers) override;
+
   SerialNumber getSerialNumber() const override;
   FlyCapture2::PGRGuid getGuid() const override;
   FlyCapture2::InterfaceType getInterfaceType() const override;
 
 protected:
   FlyCapture2::CameraBase& getCamera() const override;
+  std::mutex cameraMutex;
+
+private:
+  FlycapResult updateConfigParameterHelper( std::function<FlyCapture2::FC2Config (const FlyCapture2::FC2Config&)> update);
 
 private:
   unsigned int serialNumber;
   FlyCapture2::PGRGuid guid;
   FlyCapture2::InterfaceType interfaceType;
-  std::mutex cameraMutex;
 };
 
 }
