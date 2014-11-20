@@ -59,7 +59,8 @@ include_directories(./include/  ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_PATH
 
 add_library(pgr_camera src/libflycapcam/FlycapCameraBase.cpp
                        src/libflycapcam/FlycapCameraGigE.cpp
-                       src/libflycapcam/FlycapCameraManager.cpp)
+                       src/libflycapcam/FlycapCameraManager.cpp
+                       src/libflycapcam/FlycapTypes.cpp)
 
 add_executable(pgr_camera_node src/node/main.cpp
                               src/node/CameraNode.cpp

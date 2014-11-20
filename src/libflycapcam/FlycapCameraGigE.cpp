@@ -169,7 +169,6 @@ FlycapResult FlycapCameraGigE::setPacketDelay(unsigned int packetDelay)
   return FlycapResult(error);
 }
 
-
 void FlycapCameraGigE::stopRunFunctionRestartHelper(std::function< void() > fun)
 {
   std::lock_guard<std::mutex> lock(cameraMutex);
@@ -183,6 +182,5 @@ void FlycapCameraGigE::stopRunFunctionRestartHelper(std::function< void() > fun)
     fun();
   }
 }
-
 
 }

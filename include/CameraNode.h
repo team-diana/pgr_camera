@@ -47,7 +47,7 @@ public:
 
   void retrieveAndPublishFrame(ros::Time timestamp);
   void publishImage(FlyCapture2::Image& frame, ros::Time timestamp);
-  virtual void configure(pgr_camera::PgrCameraConfig &config, uint32_t level) ;
+  void configure(pgr_camera::PgrCameraConfig &config, uint32_t level);
 
   void init();
   void start();
@@ -63,7 +63,7 @@ protected:
   void dynamicReconfigureCameraCallback(pgr_camera::PgrCameraConfig& config,  uint32_t level);
 //   PropertyInfo getPropertyInfo(PropertyType propertyType);
   virtual flycapcam::FlycapCamera* getFlycapCamera() const = 0;
-  virtual void initImpl() = default;
+  virtual void initImpl() {};
 
 protected:
   ros::NodeHandle nodeHandler;

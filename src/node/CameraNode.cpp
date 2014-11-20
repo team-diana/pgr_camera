@@ -35,6 +35,7 @@
 #include <CameraNode.h>
 #include "pgr_camera/PgrCameraConfig.h"
 #include "libflycapcam/FlycapCameraManager.h"
+#include "flycapture/CameraBase.h"
 
 // ROS communication
 #include <ros/ros.h>
@@ -100,6 +101,12 @@ CameraNode::~CameraNode()
 
 void CameraNode::init()
 {
+  baseInit();
+  this->initImpl();
+}
+
+void CameraNode::baseInit()
+{
   ros_info("Setting up camera");
   char cameraName[200] = "image_raw";
 
@@ -110,6 +117,7 @@ void CameraNode::init()
 
   ros_info("Setup done");
 }
+
 
 void CameraNode::start()
 {
@@ -178,6 +186,14 @@ void CameraNode::publishImage(FlyCapture2::Image& frame, ros::Time timestamp)
     ROS_INFO("Publish image, timestamp is %lu",  timestamp.toNSec());
     cameraPublisher.publish(sensorImage, cameraInfo, timestamp);
   }
+}
+
+void CameraNode::configure(pgr_camera::PgrCameraConfig& config, uint32_t level)
+{
+//   FlyCapture2::GrabMode grabMode;
+//   if(config.
+
+//   getFlycapCamera()->setGrabMode(config.);
 }
 
 void CameraNode::loadIntrinsics(string inifile, unsigned int cameraSerialNumber)
