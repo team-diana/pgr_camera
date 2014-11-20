@@ -44,6 +44,11 @@ FlycapCameraBase::FlycapCameraBase(FlyCapture2::PGRGuid guid, SerialNumber seria
   this->interfaceType = interfaceType;
 }
 
+FlycapCameraBase::~FlycapCameraBase()
+{
+
+}
+
 FlycapResult FlycapCameraBase::getExposure(unsigned int& value) const
 {
   Property prop;

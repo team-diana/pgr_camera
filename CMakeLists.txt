@@ -47,27 +47,26 @@ generate_dynamic_reconfigure_options(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- # INCLUDE_DIRS include
+ INCLUDE_DIRS include
   LIBRARIES pgr_camera
   CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
 
-# set(CMAKE_CXX_FLAGS "-lflycapture -fpermissive")
-
 #this is orrbly wrong!!!! erase me
 include_directories(./include/  ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_PATH})
-# ---------
+
 add_library(pgr_camera src/libflycapcam/FlycapCameraBase.cpp
                        src/libflycapcam/FlycapCameraGigE.cpp
                        src/libflycapcam/FlycapCameraManager.cpp)
-# add_library(pgr_camera src/libpgrcam/PgrCamera.cpp src/libpgrcam/PgrCameraFactory.cpp)
-# add_executable(pgr_camera_node src/node/main.cpp src/node/PgrCameraNode.cpp
-#               src/node/PgrGigECameraNode.cpp src/node/CameraSynchronizer.cpp)
-# add_dependencies(pgr_camera_node ${PROJECT_NAME}_gencfg)
+
+add_executable(pgr_camera_node src/node/main.cpp
+                              src/node/CameraNode.cpp
+                              src/node/GigECameraNode.cpp)
+add_dependencies(pgr_camera_node ${PROJECT_NAME}_gencfg)
 
 target_link_libraries(
-#         pgr_camera_node
+        pgr_camera_node
         pgr_camera
         ${catkin_LIBRARIES}
         ${FLYCAPTURE_LIBRARIES}
@@ -82,7 +81,7 @@ target_link_libraries(
 # )
 
 ## Mark executables and/or libraries for installation
- install(TARGETS pgr_camera  #pgr_camera_node
+ install(TARGETS pgr_camera  pgr_camera_node
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

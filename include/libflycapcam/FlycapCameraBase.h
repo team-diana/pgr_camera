@@ -63,7 +63,7 @@ public:
                SerialNumber serialNumber,
                FlyCapture2::InterfaceType interfaceType);
 
-  virtual ~FlycapCameraBase() = 0;
+  virtual ~FlycapCameraBase();
 
   void initCam() override;
   void start() override;

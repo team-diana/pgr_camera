@@ -1,8 +1,6 @@
 #include "pgr_camera/PgrCameraConfig.h"
-#include "PgrCameraFactory.h"
-#include "PgrCameraNode.h"
-#include "PgrGigECameraNode.h"
-#include "CameraSynchronizer.h"
+#include "libflycapcam/FlycapCameraManager.h"
+#include "GigECameraNode.h"
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -33,15 +31,11 @@
 #include <unistd.h>
 
 using namespace Td;
+using namespace std;
 
-PgrCameraNode* createCameraNode(ros::NodeHandle handle, std::shared_ptr<pgr_camera::PgrCamera> camera)
+std::shared_ptr<CameraNode> createCameraNode(ros::NodeHandle handle, std::unique_ptr<flycapcam::FlycapCameraGigE>&& camera)
 {
-  if(camera->getInterfaceType() == FlyCapture2::INTERFACE_GIGE) {
-    return new PgrGigECameraNode(handle,  camera);
-  }
-  else {
-    return new PgrCameraNode(handle,  camera);
-  }
+  return std::shared_ptr<CameraNode>(new GigECameraNode(handle, std::move(camera)));
 }
 
 bool parseCommandLine(int argc, char** argv, std::vector<unsigned int>& serialsToStart,
@@ -110,7 +104,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, nodeName);
   ros::NodeHandle masterNodeHandle(masterNodeName);
 
-  std::vector<std::shared_ptr<PgrCameraNode>> cameraNodes;
+  std::vector<std::shared_ptr<CameraNode>> cameraNodes;
 
   std::vector<unsigned int> cameraSerialToStart;
   std::vector<unsigned int> cameraSerialToSync;
@@ -120,27 +114,26 @@ int main(int argc, char **argv)
     return -1;
   }
 
-  PgrCameraFactory pgrCameraFactory;
+  FlycapCameraManager cameraManager;
 
   try {
-    std::vector<shared_ptr<PgrCameraNode>> camerasToSync;
+    std::vector<shared_ptr<CameraNode>> camerasToSync;
     int cameraIndex = 0;
     for(auto serialNumber : cameraSerialToStart) {
       string cameraNodeName = toString("camera", serialNumber);
 
-      shared_ptr<pgr_camera::PgrCamera> pgrCamera = pgrCameraFactory.getCameraFromSerialNumber(serialNumber);
+      unique_ptr<flycapcam::FlycapCameraGigE> flycapCamera = cameraManager.createGigECamera(serialNumber);
 
-      pgrCamera->setCamIndex(cameraIndex);
       ros::NodeHandle nh(cameraNodeName);
-      std::shared_ptr<PgrCameraNode> pn(createCameraNode(nh,  pgrCamera));
+      std::shared_ptr<CameraNode> pn(createCameraNode(nh,  std::move(flycapCamera)));
       cameraNodes.push_back(pn);
-      pn->setup();
+      pn->init();
 
-      DynamicReconfigureServer::CallbackType f = boost::bind(&PgrCameraNode::configure, pn, _1, _2);
+      DynamicReconfigureServer::CallbackType f = boost::bind(&CameraNode::configure, pn, _1, _2);
       pn->getDynamicReconfigureServer().setCallback(f);
 
       if(std::find(cameraSerialToSync.begin(),
-        cameraSerialToSync.end(), serialNumber) != cameraSerialToSync.end()) {
+                   cameraSerialToSync.end(), serialNumber) != cameraSerialToSync.end()) {
         camerasToSync.push_back(pn);
       }
 
@@ -152,7 +145,7 @@ int main(int argc, char **argv)
 
 
     ros_info("All camera initialized");
-   // CameraSynchronizer cameraSynchronizer(camerasToSync);
+    // CameraSynchronizer cameraSynchronizer(camerasToSync);
 
     //ros::spin();
   }
@@ -164,10 +157,9 @@ int main(int argc, char **argv)
 
   while(true) {
     ros::Time timestamp = ros::Time::now();
-    for(std::shared_ptr<PgrCameraNode>& cam : cameraNodes) {
-      cam->nextTimestamp = timestamp;
-      usleep(30);
-      cam->retrieveFrame();
+    for(std::shared_ptr<CameraNode>& cam : cameraNodes) {
+      usleep(3000);
+      cam->retrieveAndPublishFrame(timestamp);
     }
   }
 
