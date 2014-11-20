@@ -14,6 +14,7 @@ include_directories(../../include/ ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_P
 
 generate_dynamic_reconfigure_options(
 	cfg/PgrCamera.cfg
+  cfg/PgrGigECamera.cfg
 )
 
 ## Generate messages in the 'msg' folder

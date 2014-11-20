@@ -50,45 +50,45 @@ namespace flycapcam
 class FlycapCamera
 {
 public:
-  virtual void initCam();
-  virtual void start();
-  virtual void stop();
+  FlycapCamera() {};
+  virtual ~FlycapCamera() {};
 
-  virtual ~FlycapCamera() = 0;
+  virtual void initCam() = 0;
+  virtual void start() = 0;
+  virtual void stop() = 0;
 
-  virtual FlycapResult retrieveFrame(FlyCapture2::Image& image);
-  virtual void setFrameCallback(std::function <void (FlyCapture2::Image *, unsigned int)> callback);
+  virtual FlycapResult retrieveFrame(FlyCapture2::Image& image) = 0;
 
-  virtual FlycapResult getExposure(unsigned int& value) const;
-  virtual FlycapResult getGain(float& value) const;
-  virtual FlycapResult getShutter(float& value) const;
-  virtual FlycapResult getFrameRate(float& framerate) const;
+  virtual FlycapResult getExposure(unsigned int& value) const = 0;
+  virtual FlycapResult getGain(float& value) const = 0;
+  virtual FlycapResult getShutter(float& value) const = 0;
+  virtual FlycapResult getFrameRate(float& framerate) const = 0;
 
-  virtual FlycapResult setExposure(bool automatic, bool onoff, unsigned int value = 50);
-  virtual FlycapResult setGain(bool automatic, float value = 0.0);
-  virtual FlycapResult setShutter(bool automatic, float value = 0.015);
-  virtual FlycapResult setFrameRate(bool automatic,  float value = 60);
+  virtual FlycapResult setExposure(bool automatic, bool onoff, unsigned int value = 50) = 0;
+  virtual FlycapResult setGain(bool automatic, float value = 0.0) = 0;
+  virtual FlycapResult setShutter(bool automatic, float value = 0.015) = 0;
+  virtual FlycapResult setFrameRate(bool automatic,  float value = 60) = 0;
 
-  virtual FlycapResult getAsyncBusSpeed(FlyCapture2::BusSpeed& busSpeed) const;
-  virtual FlycapResult getGrabMode(FlyCapture2::GrabMode& grabMode) const;
-  virtual FlycapResult getGrabTimeout(int& grabTimeout) const;
-  virtual FlycapResult getBandwidthAllocation(FlyCapture2::BandwidthAllocation& bandwidthAllocation) const;
-  virtual FlycapResult isHighPerformanceRetrieveBufferEnabled(bool& enabled) const;
-  virtual FlycapResult getNumBuffers(unsigned int& numBuffers) const;
+  virtual FlycapResult getAsyncBusSpeed(FlyCapture2::BusSpeed& busSpeed) const = 0;
+  virtual FlycapResult getGrabMode(FlyCapture2::GrabMode& grabMode) const = 0;
+  virtual FlycapResult getGrabTimeout(int& grabTimeout) const = 0;
+  virtual FlycapResult getBandwidthAllocation(FlyCapture2::BandwidthAllocation& bandwidthAllocation) const = 0;
+  virtual FlycapResult isHighPerformanceRetrieveBufferEnabled(bool& enabled) const = 0;
+  virtual FlycapResult getNumBuffers(unsigned int& numBuffers) const = 0;
 
-  virtual FlycapResult setAsyncBusSpeed(FlyCapture2::BusSpeed busSpeed);
-  virtual FlycapResult setGrabMode(FlyCapture2::GrabMode grabMode);
-  virtual FlycapResult setGrabTimeout(int grabTimeout);
-  virtual FlycapResult setBandwidthAllocation(FlyCapture2::BandwidthAllocation bandwidthAllocation);
-  virtual FlycapResult setHighPerformanceRetrieveBufferEnabled(bool enabled);
-  virtual FlycapResult setNumBuffers(int numBuffers);
+  virtual FlycapResult setAsyncBusSpeed(FlyCapture2::BusSpeed busSpeed) = 0;
+  virtual FlycapResult setGrabMode(FlyCapture2::GrabMode grabMode) = 0;
+  virtual FlycapResult setGrabTimeout(int grabTimeout) = 0;
+  virtual FlycapResult setBandwidthAllocation(FlyCapture2::BandwidthAllocation bandwidthAllocation) = 0;
+  virtual FlycapResult setHighPerformanceRetrieveBufferEnabled(bool enabled) = 0;
+  virtual FlycapResult setNumBuffers(int numBuffers) = 0;
 
-  virtual SerialNumber getSerialNumber() const;
-  virtual FlyCapture2::PGRGuid getGuid() const;
-  virtual FlyCapture2::InterfaceType getInterfaceType() const;
+  virtual SerialNumber getSerialNumber() const = 0;
+  virtual FlyCapture2::PGRGuid getGuid() const = 0;
+  virtual FlyCapture2::InterfaceType getInterfaceType() const = 0;
 
 protected:
-  virtual FlyCapture2::CameraBase& getCamera() const;
+  virtual FlyCapture2::CameraBase& getCamera() const = 0;
 
 };
 

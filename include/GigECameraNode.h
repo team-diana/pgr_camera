@@ -16,6 +16,7 @@ public:
 private:
   void gigeConfigure(pgr_camera::PgrCameraConfig &config, uint32_t level) ;
   std::unique_ptr<flycapcam::FlycapCameraGigE> flycapCamera;
+  DynamicReconfigureServer dynamicReconfigureServerGigECamera;
 };
 
 #endif

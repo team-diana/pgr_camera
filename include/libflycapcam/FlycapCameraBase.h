@@ -65,11 +65,12 @@ public:
 
   virtual ~FlycapCameraBase();
 
-  void initCam() override;
-  void start() override;
-  void stop() override;
+  void initCam() override = 0;
+  void start() override = 0;
+  void stop() override = 0;
 
-  FlycapResult retrieveFrame(FlyCapture2::Image& image) override;
+  FlycapResult retrieveFrame(FlyCapture2::Image& image) override = 0;
+
   FlycapResult getExposure(unsigned int& value) const override;
   FlycapResult getGain(float& value) const override;
   FlycapResult getShutter(float& value) const override;
@@ -99,7 +100,7 @@ public:
   FlyCapture2::InterfaceType getInterfaceType() const override;
 
 protected:
-  FlyCapture2::CameraBase& getCamera() const override;
+  FlyCapture2::CameraBase& getCamera() const override = 0;
   std::mutex cameraMutex;
 
 private:

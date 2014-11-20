@@ -87,13 +87,7 @@ DynamicReconfigureServer &CameraNode::getDynamicReconfigureServer()
   return dynamicReconfigureServer;
 }
 
-void CameraNode::configure(pgr_camera::PgrCameraConfig &config, uint32_t level)
-{
-  baseConfigure(config,  level);
-}
-
-
-void CameraNode::baseConfigure(pgr_camera::PgrCameraConfig &config,  uint32_t level)
+void CameraNode::dynamicReconfigureCameraCallback(pgr_camera::PgrCameraConfig &config,  uint32_t level)
 {
   ros_info("Reconfigure request received");
   loadIntrinsics(config.intrinsics_ini, getFlycapCamera()->getSerialNumber());
@@ -108,7 +102,12 @@ void CameraNode::init()
 {
   ros_info("Setting up camera");
   char cameraName[200] = "image_raw";
+
   cameraPublisher = imageTransport.advertiseCamera(cameraName, 1);
+
+  DynamicReconfigureServer::CallbackType f = boost::bind(&CameraNode::configure, this, _1, _2);
+  getDynamicReconfigureServer().setCallback(f);
+
   ros_info("Setup done");
 }
 

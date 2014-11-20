@@ -53,14 +53,17 @@ public:
   void start();
   void stop();
 
+private:
+  void baseInit();
+
 protected:
   bool frameToImage(FlyCapture2::Image *frame, sensor_msgs::Image &image);
   bool processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &img, sensor_msgs::CameraInfo &cam_info,  ros::Time timestamp);
   void loadIntrinsics(std::string inifile, unsigned int cameraSerialNumber);
-  void baseSetupConfigure(pgr_camera::PgrCameraConfig& min, pgr_camera::PgrCameraConfig& max);
-  void baseConfigure(pgr_camera::PgrCameraConfig& config,  uint32_t level);
+  void dynamicReconfigureCameraCallback(pgr_camera::PgrCameraConfig& config,  uint32_t level);
 //   PropertyInfo getPropertyInfo(PropertyType propertyType);
-  virtual flycapcam::FlycapCamera* getFlycapCamera() const;
+  virtual flycapcam::FlycapCamera* getFlycapCamera() const = 0;
+  virtual void initImpl() = default;
 
 protected:
   ros::NodeHandle nodeHandler;

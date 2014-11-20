@@ -129,15 +129,10 @@ int main(int argc, char **argv)
       cameraNodes.push_back(pn);
       pn->init();
 
-      DynamicReconfigureServer::CallbackType f = boost::bind(&CameraNode::configure, pn, _1, _2);
-      pn->getDynamicReconfigureServer().setCallback(f);
-
       if(std::find(cameraSerialToSync.begin(),
                    cameraSerialToSync.end(), serialNumber) != cameraSerialToSync.end()) {
         camerasToSync.push_back(pn);
       }
-
-      usleep(150);
 
       pn->start();
       cameraIndex++;
@@ -145,9 +140,6 @@ int main(int argc, char **argv)
 
 
     ros_info("All camera initialized");
-    // CameraSynchronizer cameraSynchronizer(camerasToSync);
-
-    //ros::spin();
   }
   catch
     (std::runtime_error &e) {

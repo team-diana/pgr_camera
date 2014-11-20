@@ -3,7 +3,8 @@
 #include "stdlib.h"
 
 GigECameraNode::GigECameraNode(const ros::NodeHandle& nodeHandle, std::unique_ptr<flycapcam::FlycapCameraGigE>&& flycapCamera) :
- CameraNode(nodeHandle)
+ CameraNode(nodeHandle),
+ dynamicReconfigureServerGigECamera(nodeHandle)
 {
   this->flycapCamera = std::move(flycapCamera);
 }
