@@ -70,9 +70,10 @@ int main(int argc, char **argv)
 
   std::vector<unsigned int> cameraSerialToStart;
   std::vector<unsigned int> cameraSerialToSync;
-  bool startAndStop, printGigEInfo, printDebugInfo;
+  bool startAndStop, printGigEInfo, printDebugInfo, enablePublish;
 
-  if(!parseCommandLine(argc,  argv,  cameraSerialToStart,  cameraSerialToSync, startAndStop, printGigEInfo, printDebugInfo)) {
+  if(!parseCommandLine(argc,  argv,  cameraSerialToStart,  cameraSerialToSync, startAndStop,
+    printGigEInfo, printDebugInfo, enablePublish)) {
     return -1;
   }
 
@@ -94,6 +95,8 @@ int main(int argc, char **argv)
 //                    cameraSerialToSync.end(), serialNumber) != cameraSerialToSync.end()) {
 //         camerasToSync.push_back(pn);
 //       }
+
+      pn->publishEnabled = enablePublish;
 
       if(startAndStop) {
         pn->setStartAndStopEnabled(true);

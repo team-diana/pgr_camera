@@ -68,6 +68,9 @@ protected:
   virtual flycapcam::FlycapCamera* getFlycapCamera() const = 0;
   virtual void initImpl() {};
 
+public:
+  bool publishEnabled;
+
 protected:
   ros::NodeHandle nodeHandler;
   image_transport::ImageTransport imageTransport;

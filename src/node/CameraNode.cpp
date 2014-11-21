@@ -78,6 +78,7 @@ using namespace flycapcam;
 
 
 CameraNode::CameraNode(const ros::NodeHandle &nodeHandle) :
+  publishEnabled(true),
   nodeHandler(nodeHandle),
   imageTransport(nodeHandle),
   cameraInfoManager(nodeHandle),
@@ -231,7 +232,9 @@ void CameraNode::retrieveAndPublishFrameImpl(ros::Time timestamp)
   FlyCapture2::Image image;
   flycapcam::FlycapResult result = getFlycapCamera()->retrieveFrame(image);
   if(result) {
-    publishImage(image, timestamp);
+    if(publishEnabled) {
+      publishImage(image, timestamp);
+    }
   } else {
     ros_error(toString("error while retrieving frame: ", result.getError().GetDescription()));
   }
@@ -268,9 +271,9 @@ void CameraNode::configure(pgr_camera::PgrCameraConfig& config, uint32_t level)
 
   FlyCapture2::GrabMode grabMode;
   if(config.grab_mode == "BUFFER_FRAMES") {
-      grabMode = FlyCapture2::BUFFER_FRAMES;
-  } else if (config.grab_mode == "DROP_FRAMES") {
-      grabMode = FlyCapture2::DROP_FRAMES;
+    grabMode = FlyCapture2::BUFFER_FRAMES;
+  } else if(config.grab_mode == "DROP_FRAMES") {
+    grabMode = FlyCapture2::DROP_FRAMES;
   } else {
     ros_error(toString("Unknown grab mode: ", config.grab_mode));
     grabMode = FlyCapture2::DROP_FRAMES;
