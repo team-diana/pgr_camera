@@ -17,23 +17,23 @@ bool parseCommandLine(int argc, char* const * argv, std::vector<unsigned int>& s
      */
     options_description desc("Options");
     desc.add_options()
-    ("help, h", "Print help messages")
-    ("serials, s", value<std::vector<unsigned int> >()->multitoken(), "list of serials of the cameras to start")
+    ("help,h", "Print help messages")
+    ("serials,s", value<std::vector<unsigned int> >()->multitoken(), "list of serials of the cameras to start")
 //     ("sync-serials, S", value<std::vector<unsigned int> >()->multitoken(), "list of serials of the cameras to sync");
-    ("start-and-stop, P", value<bool>()->default_value(false)->implicit_value(true), "start and stop each camera for every frame")
-    ("print-gige-info, N", value<bool>()->default_value(false)->implicit_value(true), "reports information about the GigE network")
-    ("debug, d", value<bool>()->default_value(false)->implicit_value(true), "print debug information during execution");
+    ("start-and-stop,P", value<bool>()->default_value(false)->implicit_value(true), "start and stop each camera for every frame")
+    ("print-gige-info,G", value<bool>()->default_value(false)->implicit_value(true), "reports information about the GigE network")
+    ("debug,d", value<bool>()->default_value(false)->implicit_value(true), "print debug information during execution");
 
     variables_map varsMap;
     try {
       store(parse_command_line(argc, argv, desc), varsMap);
 
       if(varsMap.count("help")) {
-        ros_error("Usage: \n" \
-                  "--serials {list of serials of the cameras to start} \n"\
-//                   "--sync-serials {list of serials of the cameras to start in sync}"
-                  ""
-                 );
+        cout << desc << endl;
+//         cout << "Usage: " << endl <<
+//                   "--serials,-s {list of serials of the cameras to start} " << endl <<
+// //                   "--sync-serials {list of serials of the cameras to start in sync}"
+//                   "--start-and-stop,-P\t use " << std::endl;
         return false;
       }
 

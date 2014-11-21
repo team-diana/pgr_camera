@@ -73,7 +73,6 @@ int main(int argc, char **argv)
   bool startAndStop, printGigEInfo, printDebugInfo;
 
   if(!parseCommandLine(argc,  argv,  cameraSerialToStart,  cameraSerialToSync, startAndStop, printGigEInfo, printDebugInfo)) {
-    ROS_ERROR("Error while parsing the command line arguments");
     return -1;
   }
 
