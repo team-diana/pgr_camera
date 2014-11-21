@@ -61,7 +61,7 @@ FlycapResult FlycapCameraBase::getExposure(unsigned int& value) const
   return FlycapResult(error);
 }
 
-FlycapResult FlycapCameraBase::getGain(float& value) const
+FlycapResult FlycapCameraBase::getGain(double& value) const
 {
   Property prop;
   Error error;
@@ -73,7 +73,7 @@ FlycapResult FlycapCameraBase::getGain(float& value) const
   return FlycapResult(error);
 }
 
-FlycapResult FlycapCameraBase::getShutter(float& value) const
+FlycapResult FlycapCameraBase::getShutter(double& value) const
 {
   Property prop;
   Error error;
@@ -85,7 +85,7 @@ FlycapResult FlycapCameraBase::getShutter(float& value) const
   return FlycapResult(error);
 }
 
-FlycapResult FlycapCameraBase::getFrameRate(float& value) const
+FlycapResult FlycapCameraBase::getFrameRate(double& value) const
 {
   Property prop;
   Error error;
@@ -112,14 +112,14 @@ FlycapResult FlycapCameraBase::setExposure(bool automatic, bool onoff, unsigned 
   return FlycapResult(error);
 }
 
-FlycapResult FlycapCameraBase::setGain(bool automatic, float value)
+FlycapResult FlycapCameraBase::setGain(bool automatic, double value)
 {
   Property prop;
   Error error;
 
   prop.type = GAIN;
   prop.autoManualMode = automatic;
-  prop.absValue = value;
+  prop.absValue = (float)value;
   prop.onOff = true;
 
   error = getCamera().SetProperty(&prop);
@@ -127,14 +127,14 @@ FlycapResult FlycapCameraBase::setGain(bool automatic, float value)
   return FlycapResult(error);
 }
 
-FlycapResult FlycapCameraBase::setShutter(bool automatic, float value)
+FlycapResult FlycapCameraBase::setShutter(bool automatic, double value)
 {
   Property prop;
   Error error;
 
   prop.type = FlyCapture2::SHUTTER;
   prop.autoManualMode = automatic;
-  prop.absValue = value;
+  prop.absValue = (float)value;
   prop.onOff = true;
 
   error = getCamera().SetProperty(&prop);
@@ -142,14 +142,14 @@ FlycapResult FlycapCameraBase::setShutter(bool automatic, float value)
   return FlycapResult(error);
 }
 
-FlycapResult FlycapCameraBase::setFrameRate(bool automatic, float value)
+FlycapResult FlycapCameraBase::setFrameRate(bool automatic, double value)
 {
   Property prop;
   Error error;
 
   prop.type = FlyCapture2::SHUTTER;
   prop.autoManualMode = automatic;
-  prop.absValue = value;
+  prop.absValue = (float)value;
   prop.onOff = true;
 
   error = getCamera().SetProperty(&prop);

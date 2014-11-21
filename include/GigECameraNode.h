@@ -20,8 +20,8 @@ public:
 private:
   ros::NodeHandle gigeNodeHandle;
   std::unique_ptr<flycapcam::FlycapCameraGigE> flycapCamera;
-  boost::recursive_mutex dynamicReconfigureGigEMutex;
-  DynamicGigEReconfigureServer dynamicReconfigureServerGigECamera;
+  boost::recursive_mutex camGigEReconfigureMutex;
+  DynamicGigEReconfigureServer camGigEReconfigureServer;
   virtual void initImpl();
   void configureGigE(pgr_camera::PgrGigECameraConfig &config, uint32_t level) ;
   void updateDynamicReconfigureServerGigECamera();

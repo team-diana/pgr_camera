@@ -6,6 +6,8 @@
 #include <team_diana_lib/strings/strings.h>
 #include <team_diana_lib/strings/iterables.h>
 
+#include <ros/ros.h>
+
 using namespace Td;
 using namespace std;
 using namespace FlyCapture2;
@@ -14,7 +16,7 @@ using namespace flycapcam;
 GigECameraNode::GigECameraNode(const ros::NodeHandle& nodeHandle, std::unique_ptr<flycapcam::FlycapCameraGigE>&& flycapCamera) :
  CameraNode(nodeHandle),
  gigeNodeHandle(toString("GigECamera", flycapCamera->getSerialNumber())),
- dynamicReconfigureServerGigECamera(dynamicReconfigureGigEMutex, gigeNodeHandle)
+ camGigEReconfigureServer(camGigEReconfigureMutex, gigeNodeHandle)
 {
   this->flycapCamera = std::move(flycapCamera);
 }
@@ -22,8 +24,17 @@ GigECameraNode::GigECameraNode(const ros::NodeHandle& nodeHandle, std::unique_pt
 
 void GigECameraNode::configureGigE(pgr_camera::PgrGigECameraConfig& config, uint32_t level)
 {
-  flycapCamera->setPacketDelay(config.packet_delay);
-  flycapCamera->setPacketSize(config.packet_size);
+  std::lock_guard<boost::recursive_mutex> lock(camGigEReconfigureMutex);
+  FlycapResult result;
+
+  result = flycapCamera->setPacketDelay(config.packet_delay);
+  printResultErrorMessageIfAny(result, "Unable to set packet delay");
+
+  result = flycapCamera->setPacketSize(config.packet_size);
+  printResultErrorMessageIfAny(result, "Unable to set packet size");
+
+  result = flycapCamera->setPacketResendEnabled(config.packet_resend);
+  printResultErrorMessageIfAny(result, "Unable to set packet resend");
 }
 
 flycapcam::FlycapCamera* GigECameraNode::getFlycapCamera() const
@@ -93,7 +104,7 @@ void GigECameraNode::printCameraStats()
 void GigECameraNode::initImpl()
 {
   DynamicGigEReconfigureServer::CallbackType f = boost::bind(&GigECameraNode::configureGigE, this, _1, _2);
-  dynamicReconfigureServerGigECamera.setCallback(f);
+  camGigEReconfigureServer.setCallback(f);
 
   updateDynamicReconfigureServerGigECamera();
 }
@@ -124,7 +135,7 @@ void GigECameraNode::updateDynamicReconfigureServerGigECamera()
     ros_error(result.getErrorDescription());
   }
 
-  std::lock_guard<boost::recursive_mutex> lock(dynamicReconfigureGigEMutex);
-  dynamicReconfigureServerGigECamera.updateConfig(config);
+  std::lock_guard<boost::recursive_mutex> lock(camGigEReconfigureMutex);
+  camGigEReconfigureServer.updateConfig(config);
 }
 

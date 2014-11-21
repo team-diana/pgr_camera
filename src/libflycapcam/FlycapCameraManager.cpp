@@ -16,7 +16,7 @@ int FlycapCameraManager::getNumOfAvailableCameras()
   unsigned int numOfCameras = 0;
 
   if((error = busMgr.GetNumOfCameras(&numOfCameras)) != PGRERROR_OK) {
-    std::cerr << "Unable to get number of cameras: " << error.GetDescription() << std::endl;
+    cerr << "Unable to get number of cameras: " << error.GetDescription() << endl;
   }
 
   return numOfCameras;
@@ -29,10 +29,10 @@ unique_ptr< FlycapCameraGigE > FlycapCameraManager::createGigECameraFromGuid(PGR
   unique_ptr<GigECamera>  gigeCamera(new GigECamera());
 
   if((error = gigeCamera->Connect(&guid)) != PGRERROR_OK) {
-    std::cerr << Td::toString("Unable to connect to GigE camera with guid %s", guidToString(guid)) << std::endl;
+    cerr << Td::toString("Unable to connect to GigE camera with guid %s", guidToString(guid)) << endl;
     return nullptr;
   } else {
-    std::cout << Td::toString("Created camera with guid: ", guidToString(guid)) << std::endl;
+    cout << Td::toString("Created camera with guid: ", guidToString(guid)) << endl;
     return unique_ptr<FlycapCameraGigE> (
              new FlycapCameraGigE(move(gigeCamera), guid, serialNumber, INTERFACE_GIGE)
            );
@@ -45,7 +45,7 @@ unique_ptr<FlycapCameraGigE> FlycapCameraManager::createGigECamera(SerialNumber 
   PGRGuid cameraGuid;
 
   if((error = busMgr.GetCameraFromSerialNumber(serialNumber,  &cameraGuid)) != PGRERROR_OK) {
-    std::cerr << "Unable to retrieve camera with serial number " <<  serialNumber;
+    cerr << "Unable to retrieve camera with serial number " <<  serialNumber << endl;
     return nullptr;
   } else {
     return createGigECameraFromGuid(cameraGuid, serialNumber);
@@ -55,5 +55,5 @@ unique_ptr<FlycapCameraGigE> FlycapCameraManager::createGigECamera(SerialNumber 
 void FlycapCameraManager::printNumOfAvaliableCameras()
 {
   int numOfCameras = getNumOfAvailableCameras();
-  std::cout << Td::toString("Found ",  numOfCameras, " cameras") << std::endl;
+  cout << Td::toString("Found ",  numOfCameras, " cameras") << endl;
 }

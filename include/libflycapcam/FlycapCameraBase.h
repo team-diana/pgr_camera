@@ -72,14 +72,14 @@ public:
   FlycapResult retrieveFrame(FlyCapture2::Image& image) override = 0;
 
   FlycapResult getExposure(unsigned int& value) const override;
-  FlycapResult getGain(float& value) const override;
-  FlycapResult getShutter(float& value) const override;
-  FlycapResult getFrameRate(float& framerate) const override;
+  FlycapResult getGain(double& value) const override;
+  FlycapResult getShutter(double& value) const override;
+  FlycapResult getFrameRate(double& value) const override;
 
   FlycapResult setExposure(bool automatic, bool onoff, unsigned int value = 50) override;
-  FlycapResult setGain(bool automatic, float value = 0.0) override;
-  FlycapResult setShutter(bool automatic, float value = 0.015) override;
-  FlycapResult setFrameRate(bool automatic,  float value = 60) override;
+  FlycapResult setGain(bool automatic, double value = 0.0) override;
+  FlycapResult setShutter(bool automatic, double value = 0.015) override;
+  FlycapResult setFrameRate(bool automatic,  double value = 60) override;
 
   FlycapResult getAsyncBusSpeed(FlyCapture2::BusSpeed& busSpeed) const override;
   FlycapResult getGrabMode(FlyCapture2::GrabMode& grabMode) const override;
@@ -101,6 +101,7 @@ public:
 
 protected:
   FlyCapture2::CameraBase& getCamera() const override = 0;
+
   std::mutex cameraMutex;
 
 private:

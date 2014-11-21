@@ -74,26 +74,28 @@
 using namespace Td;
 using namespace std;
 using namespace FlyCapture2;
+using namespace flycapcam;
 
 
 CameraNode::CameraNode(const ros::NodeHandle &nodeHandle) :
   nodeHandler(nodeHandle),
   imageTransport(nodeHandle),
   cameraInfoManager(nodeHandle),
+  camReconfigureServer(nodeHandle),
   startAndStopEnabled(false)
-//   ,
-//   dynamicReconfigureServer(nodeHandle)
 {}
-
-// DynamicReconfigureServer &CameraNode::getDynamicReconfigureServer()
-// {
-//   return dynamicReconfigureServer;
-// }
 
 void CameraNode::dynamicReconfigureCameraCallback(pgr_camera::PgrCameraConfig &config,  uint32_t level)
 {
   ros_info("Reconfigure request received");
   loadIntrinsics(config.intrinsics_ini, getFlycapCamera()->getSerialNumber());
+}
+
+void CameraNode::printResultErrorMessageIfAny(const flycapcam::FlycapResult& result, string msg)
+{
+  if(!result) {
+    ros_error(toString(msg, ": ", result.getErrorDescription()));
+  }
 }
 
 CameraNode::~CameraNode()
@@ -110,16 +112,54 @@ void CameraNode::init()
 void CameraNode::baseInit()
 {
   ros_info("Setting up camera");
-  char cameraName[200] = "image_raw";
 
-  cameraPublisher = imageTransport.advertiseCamera(cameraName, 1);
+  cameraPublisher = imageTransport.advertiseCamera("image_raw", 1);
 
-//   DynamicReconfigureServer::CallbackType f = boost::bind(&CameraNode::configure, this, _1, _2);
-//   getDynamicReconfigureServer().setCallback(f);
+  DynamicReconfigureServer::CallbackType f = boost::bind(&CameraNode::configure, this, _1, _2);
+  camReconfigureServer.setCallback(f);
 
   ros_info("Setup done");
 }
 
+void CameraNode::updateReconfigureServer()
+{
+  //TODO: missing auto_* values
+  FlycapResult result;
+  pgr_camera::PgrCameraConfig config;
+
+  result = getFlycapCamera()->getFrameRate(config.frame_rate);
+  printResultErrorMessageIfAny(result, "Unable to get framerate");
+
+  result = getFlycapCamera()->getGain(config.gain);
+  printResultErrorMessageIfAny(result, "Unable to get gain");
+
+  result = getFlycapCamera()->getShutter(config.shutter);
+  printResultErrorMessageIfAny(result, "Unable to get shutter");
+
+  FlyCapture2::GrabMode grabMode;
+  if(result = getFlycapCamera()->getGrabMode(grabMode)) {
+    switch(grabMode) {
+    case GrabMode::BUFFER_FRAMES:
+      config.grab_mode = "BUFFER_FRAMES";
+      break;
+    case GrabMode::DROP_FRAMES:
+      config.grab_mode = "DROP_FRAMES";
+      break;
+    default:
+      ros_error("unknown grab mode");
+    }
+  } else {
+    printResultErrorMessageIfAny(result, "Unable to get grab mode");
+  }
+
+  unsigned int buffer_num = 1;
+  getFlycapCamera()->getNumBuffers(buffer_num);
+  config.buffer_num = (int)buffer_num;
+  printResultErrorMessageIfAny(result, "Unable to get buffer num");
+
+  lock_guard<boost::recursive_mutex> lock(camReconfigureMutex);
+  camReconfigureServer.updateConfig(config);
+}
 
 void CameraNode::start()
 {
@@ -145,7 +185,7 @@ bool CameraNode::frameToImage(FlyCapture2::Image *frame, sensor_msgs::Image &ima
 
   // NOTE: 16-bit and Yuv formats not supported
   static const char *BAYER_ENCODINGS[] = { "none", "bayer_rggb8",
-                                         "bayer_grbg8", "bayer_gbrg8", "bayer_bggr8", "unknown"
+                                           "bayer_grbg8", "bayer_gbrg8", "bayer_bggr8", "unknown"
                                          };
   std::string encoding;
 
@@ -153,7 +193,7 @@ bool CameraNode::frameToImage(FlyCapture2::Image *frame, sensor_msgs::Image &ima
   FlyCapture2::BayerTileFormat bayerFmt;
   bayerFmt = frame->GetBayerTileFormat();
   //ROS_INFO("bayer is %u", bayerFmt);
-  if (bayerFmt == FlyCapture2::NONE) {
+  if(bayerFmt == FlyCapture2::NONE) {
     encoding = sensor_msgs::image_encodings::MONO8;
   }
   else {
@@ -168,7 +208,7 @@ bool CameraNode::processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &img
 {
   img.header.stamp = cam_info.header.stamp = timestamp;
 
-  if (!frameToImage(frame, img)) {
+  if(!frameToImage(frame, img)) {
     return false;
   }
   cam_info.height = img.height;
@@ -193,7 +233,7 @@ void CameraNode::retrieveAndPublishFrameImpl(ros::Time timestamp)
   if(result) {
     publishImage(image, timestamp);
   } else {
-    ros_error (toString("error while retrieving frame: ", result.getError().GetDescription()) );
+    ros_error(toString("error while retrieving frame: ", result.getError().GetDescription()));
   }
 }
 
@@ -206,7 +246,7 @@ void CameraNode::retrieveAndPublishFrameStartAndStop(ros::Time timestamp)
 
 void CameraNode::publishImage(FlyCapture2::Image& frame, ros::Time timestamp)
 {
-  if (processFrame(&frame, sensorImage, cameraInfo, timestamp)) {
+  if(processFrame(&frame, sensorImage, cameraInfo, timestamp)) {
     ROS_INFO("Publish image, timestamp is %lu",  timestamp.toNSec());
     cameraPublisher.publish(sensorImage, cameraInfo, timestamp);
   }
@@ -214,10 +254,32 @@ void CameraNode::publishImage(FlyCapture2::Image& frame, ros::Time timestamp)
 
 void CameraNode::configure(pgr_camera::PgrCameraConfig& config, uint32_t level)
 {
-//   FlyCapture2::GrabMode grabMode;
-//   if(config.
+  lock_guard<boost::recursive_mutex> lock(camReconfigureMutex);
+  FlycapResult result;
 
-//   getFlycapCamera()->setGrabMode(config.);
+  result = getFlycapCamera()->setFrameRate(false, config.frame_rate);
+  printResultErrorMessageIfAny(result, "Unable to set framerate");
+
+  result = getFlycapCamera()->setGain(config.auto_gain, config.gain);
+  printResultErrorMessageIfAny(result, "Unable to get gain");
+
+  result = getFlycapCamera()->setShutter(config.shutter);
+  printResultErrorMessageIfAny(result, "Unable to get shutter");
+
+  FlyCapture2::GrabMode grabMode;
+  if(config.grab_mode == "BUFFER_FRAMES") {
+      grabMode = FlyCapture2::BUFFER_FRAMES;
+  } else if (config.grab_mode == "DROP_FRAMES") {
+      grabMode = FlyCapture2::DROP_FRAMES;
+  } else {
+    ros_error(toString("Unknown grab mode: ", config.grab_mode));
+    grabMode = FlyCapture2::DROP_FRAMES;
+  }
+  result = getFlycapCamera()->setGrabMode(grabMode);
+  printResultErrorMessageIfAny(result, "Unable to set grab model");
+
+  getFlycapCamera()->setNumBuffers(config.buffer_num);
+  printResultErrorMessageIfAny(result, "Unable to set buffer num");
 }
 
 void CameraNode::loadIntrinsics(string inifile, unsigned int cameraSerialNumber)
@@ -228,15 +290,15 @@ void CameraNode::loadIntrinsics(string inifile, unsigned int cameraSerialNumber)
   inifile = boost::str(boost::format("intrinsics%1%.ini") % cameraSerialNumber);
 
   char cwd[2048];
-  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+  if(getcwd(cwd, sizeof(cwd)) != NULL) {
     ROS_INFO("Searching intrinsics %s file in %s", inifile.c_str(),  cwd);
   }
   std::string cameraName = Td::toString(cameraSerialNumber);
 
   ROS_INFO("Loading calibration for camera %d with name %s",  cameraSerialNumber, cameraName.c_str());
   ifstream fin(inifile.c_str());
-  if (fin.is_open()) {
-    if (camera_calibration_parsers::readCalibrationIni(inifile, cameraName, cameraInfo)) {
+  if(fin.is_open()) {
+    if(camera_calibration_parsers::readCalibrationIni(inifile, cameraName, cameraInfo)) {
       ROS_INFO("Loaded calibration for camera '%s' from intrinsics %s", cameraName.c_str(),  inifile.c_str());
     }
     else {

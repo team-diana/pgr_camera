@@ -60,14 +60,14 @@ public:
   virtual FlycapResult retrieveFrame(FlyCapture2::Image& image) = 0;
 
   virtual FlycapResult getExposure(unsigned int& value) const = 0;
-  virtual FlycapResult getGain(float& value) const = 0;
-  virtual FlycapResult getShutter(float& value) const = 0;
-  virtual FlycapResult getFrameRate(float& framerate) const = 0;
+  virtual FlycapResult getGain(double& value) const = 0;
+  virtual FlycapResult getShutter(double& value) const = 0;
+  virtual FlycapResult getFrameRate(double& framerate) const = 0;
 
   virtual FlycapResult setExposure(bool automatic, bool onoff, unsigned int value = 50) = 0;
-  virtual FlycapResult setGain(bool automatic, float value = 0.0) = 0;
-  virtual FlycapResult setShutter(bool automatic, float value = 0.015) = 0;
-  virtual FlycapResult setFrameRate(bool automatic,  float value = 60) = 0;
+  virtual FlycapResult setGain(bool automatic, double value = 0.0) = 0;
+  virtual FlycapResult setShutter(bool automatic, double value = 0.015) = 0;
+  virtual FlycapResult setFrameRate(bool automatic,  double value = 60) = 0;
 
   virtual FlycapResult getAsyncBusSpeed(FlyCapture2::BusSpeed& busSpeed) const = 0;
   virtual FlycapResult getGrabMode(FlyCapture2::GrabMode& grabMode) const = 0;

@@ -43,8 +43,6 @@ public:
   CameraNode(const ros::NodeHandle &nodeHandle);
   virtual ~CameraNode() = 0;
 
-//   DynamicReconfigureServer& getDynamicReconfigureServer();
-
   void retrieveAndPublishFrame(ros::Time timestamp);
   void publishImage(FlyCapture2::Image& frame, ros::Time timestamp);
   void configure(pgr_camera::PgrCameraConfig &config, uint32_t level);
@@ -57,6 +55,7 @@ public:
 
 private:
   void baseInit();
+  void updateReconfigureServer();
 
 protected:
   void retrieveAndPublishFrameImpl(ros::Time timestamp);
@@ -65,7 +64,7 @@ protected:
   bool processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &img, sensor_msgs::CameraInfo &cam_info,  ros::Time timestamp);
   void loadIntrinsics(std::string inifile, unsigned int cameraSerialNumber);
   void dynamicReconfigureCameraCallback(pgr_camera::PgrCameraConfig& config,  uint32_t level);
-//   PropertyInfo getPropertyInfo(PropertyType propertyType);
+  void printResultErrorMessageIfAny(const flycapcam::FlycapResult& result, std::string msg = "");
   virtual flycapcam::FlycapCamera* getFlycapCamera() const = 0;
   virtual void initImpl() {};
 
@@ -75,7 +74,8 @@ protected:
   image_transport::CameraPublisher cameraPublisher;
   polled_camera::PublicationServer publicationServer;
   camera_info_manager::CameraInfoManager cameraInfoManager;
-//   DynamicReconfigureServer dynamicReconfigureServer;
+  boost::recursive_mutex camReconfigureMutex;
+  DynamicReconfigureServer camReconfigureServer;
   sensor_msgs::Image sensorImage;
   sensor_msgs::CameraInfo cameraInfo;
   bool startAndStopEnabled;
