@@ -79,7 +79,8 @@ using namespace FlyCapture2;
 CameraNode::CameraNode(const ros::NodeHandle &nodeHandle) :
   nodeHandler(nodeHandle),
   imageTransport(nodeHandle),
-  cameraInfoManager(nodeHandle)
+  cameraInfoManager(nodeHandle),
+  startAndStopEnabled(false)
 //   ,
 //   dynamicReconfigureServer(nodeHandle)
 {}
@@ -123,7 +124,7 @@ void CameraNode::baseInit()
 void CameraNode::start()
 {
   ROS_INFO("Starting up camera");
-//   getFlycapCamera()->start();
+  getFlycapCamera()->start();
 }
 
 void CameraNode::stop()
@@ -132,6 +133,12 @@ void CameraNode::stop()
   cameraPublisher.shutdown();
   getFlycapCamera()->stop();
 }
+
+void CameraNode::setStartAndStopEnabled(bool enabled)
+{
+  startAndStopEnabled = true;
+}
+
 
 bool CameraNode::frameToImage(FlyCapture2::Image *frame, sensor_msgs::Image &image)
 {
@@ -172,14 +179,28 @@ bool CameraNode::processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &img
 
 void CameraNode::retrieveAndPublishFrame(ros::Time timestamp)
 {
+  if(startAndStopEnabled) {
+    retrieveAndPublishFrameStartAndStop(timestamp);
+  } else {
+    retrieveAndPublishFrameImpl(timestamp);
+  }
+}
+
+void CameraNode::retrieveAndPublishFrameImpl(ros::Time timestamp)
+{
   FlyCapture2::Image image;
-  getFlycapCamera()->start();
   flycapcam::FlycapResult result = getFlycapCamera()->retrieveFrame(image);
   if(result) {
     publishImage(image, timestamp);
   } else {
     ros_error (toString("error while retrieving frame: ", result.getError().GetDescription()) );
   }
+}
+
+void CameraNode::retrieveAndPublishFrameStartAndStop(ros::Time timestamp)
+{
+  getFlycapCamera()->start();
+  retrieveAndPublishFrameImpl(timestamp);
   getFlycapCamera()->stop();
 }
 

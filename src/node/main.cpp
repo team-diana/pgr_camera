@@ -31,13 +31,18 @@ std::shared_ptr<GigECameraNode> createGigECameraNode(unsigned int serialNumber,
   string cameraNodeName = toString("camera", serialNumber);
   unique_ptr<flycapcam::FlycapCameraGigE> flycapCamera = cameraManager.createGigECamera(serialNumber);
 
+  if(flycapCamera == nullptr) {
+    ros_error(toString("No camera with serial number: ", serialNumber));
+    exit(-1);
+  }
+
   ros::NodeHandle nh(cameraNodeName);
   std::shared_ptr<GigECameraNode> pn(new GigECameraNode(nh, std::move(flycapCamera)));
 
   return pn;
 }
 
-void printGigEInfo(const std::vector<unsigned int>& serials) {
+void showGigEInfo(const std::vector<unsigned int>& serials) {
   FlycapCameraManager cameraManager;
   for(auto serial : serials) {
     auto camNode = createGigECameraNode(serial, cameraManager);
@@ -65,11 +70,16 @@ int main(int argc, char **argv)
 
   std::vector<unsigned int> cameraSerialToStart;
   std::vector<unsigned int> cameraSerialToSync;
-  bool showGigEInfo;
+  bool startAndStop, printGigEInfo, printDebugInfo;
 
-  if(!parseCommandLine(argc,  argv,  cameraSerialToStart,  cameraSerialToSync, showGigEInfo)) {
+  if(!parseCommandLine(argc,  argv,  cameraSerialToStart,  cameraSerialToSync, startAndStop, printGigEInfo, printDebugInfo)) {
     ROS_ERROR("Error while parsing the command line arguments");
     return -1;
+  }
+
+  if(printGigEInfo) {
+    showGigEInfo(cameraSerialToStart);
+    exit(0);
   }
 
   try {
@@ -86,10 +96,12 @@ int main(int argc, char **argv)
 //         camerasToSync.push_back(pn);
 //       }
 
-      pn->start();
-//       cameraIndex++;
+      if(startAndStop) {
+        pn->setStartAndStopEnabled(true);
+      } else {
+        pn->start();
+      }
     }
-
 
     ros_info("All camera initialized");
   }
@@ -108,7 +120,7 @@ int main(int argc, char **argv)
       usleep(3000);
       cam->retrieveAndPublishFrame(timestamp);
 
-      if(cycle % 20) {
+      if(printDebugInfo && (cycle % 20)) {
         cam->printGigEInfo();
         cam->printCameraStats();
       }

@@ -1,3 +1,5 @@
+#include <CommandLineParsing.h>
+
 #include <ros/ros.h>
 #include <boost/program_options.hpp>
 #include <team_diana_lib/logging/logging.h>
@@ -7,7 +9,7 @@ using namespace Td;
 using namespace std;
 
 bool parseCommandLine(int argc, char* const * argv, std::vector<unsigned int>& serialsToStart,
-                      std::vector<unsigned int>& serialsToSync, bool& showGigEInfo)
+                      std::vector<unsigned int>& serialsToSync, bool& startAndStop, bool& printGigEInfo, bool& printDebugInfo)
 {
   using namespace boost::program_options;
   try {
@@ -18,7 +20,9 @@ bool parseCommandLine(int argc, char* const * argv, std::vector<unsigned int>& s
     ("help, h", "Print help messages")
     ("serials, s", value<std::vector<unsigned int> >()->multitoken(), "list of serials of the cameras to start")
 //     ("sync-serials, S", value<std::vector<unsigned int> >()->multitoken(), "list of serials of the cameras to sync");
-    ("show-gige-info, N", value<bool>()->default_value(false)->implicit_value(true), "reports information about the GigE network");
+    ("start-and-stop, P", value<bool>()->default_value(false)->implicit_value(true), "start and stop each camera for every frame")
+    ("print-gige-info, N", value<bool>()->default_value(false)->implicit_value(true), "reports information about the GigE network")
+    ("debug, d", value<bool>()->default_value(false)->implicit_value(true), "print debug information during execution");
 
     variables_map varsMap;
     try {
@@ -49,7 +53,8 @@ bool parseCommandLine(int argc, char* const * argv, std::vector<unsigned int>& s
 //         serialsToSync.insert(serialsToSync.end(),  serialsToSyncArgs.begin(),  serialsToSyncArgs.end());
 //       }
 
-      showGigEInfo = boost::any_cast<bool>(varsMap["show-gige-info"].value());
+      printGigEInfo = boost::any_cast<bool>(varsMap["print-gige-info"].value());
+      printDebugInfo = boost::any_cast<bool>(varsMap["debug"].value());
 
       notify(varsMap);
     }

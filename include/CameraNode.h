@@ -53,10 +53,14 @@ public:
   void start();
   void stop();
 
+  void setStartAndStopEnabled(bool enabled);
+
 private:
   void baseInit();
 
 protected:
+  void retrieveAndPublishFrameImpl(ros::Time timestamp);
+  void retrieveAndPublishFrameStartAndStop(ros::Time timestamp);
   bool frameToImage(FlyCapture2::Image *frame, sensor_msgs::Image &image);
   bool processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &img, sensor_msgs::CameraInfo &cam_info,  ros::Time timestamp);
   void loadIntrinsics(std::string inifile, unsigned int cameraSerialNumber);
@@ -74,6 +78,7 @@ protected:
 //   DynamicReconfigureServer dynamicReconfigureServer;
   sensor_msgs::Image sensorImage;
   sensor_msgs::CameraInfo cameraInfo;
+  bool startAndStopEnabled;
 };
 
 #endif
