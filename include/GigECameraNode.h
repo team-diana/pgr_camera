@@ -14,6 +14,8 @@ class GigECameraNode : public CameraNode {
 public:
   GigECameraNode(const ros::NodeHandle& nodeHandle, std::unique_ptr<flycapcam::FlycapCameraGigE>&& pgrCamera);
   flycapcam::FlycapCamera* getFlycapCamera() const override;
+  void printGigEInfo();
+  void printCameraStats();
 
 private:
   ros::NodeHandle gigeNodeHandle;

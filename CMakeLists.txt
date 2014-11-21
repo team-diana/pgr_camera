@@ -64,7 +64,8 @@ add_library(pgr_camera src/libflycapcam/FlycapCameraBase.cpp
 
 add_executable(pgr_camera_node src/node/main.cpp
                               src/node/CameraNode.cpp
-                              src/node/GigECameraNode.cpp)
+                              src/node/GigECameraNode.cpp
+                              src/node/CommandLineParsing.cpp)
 add_dependencies(pgr_camera_node ${PROJECT_NAME}_gencfg)
 
 target_link_libraries(

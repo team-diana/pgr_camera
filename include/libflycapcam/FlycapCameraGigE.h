@@ -88,6 +88,10 @@ public:
   FlycapResult setPacketDelay(unsigned int packetDelay);
   FlycapResult setPacketResendEnabled(bool enabled);
 
+  FlycapResult getAvailableGigEPacketSize(unsigned int& packetSize);
+  FlycapResult getGigEChannelsInfo(std::vector<FlyCapture2::GigEStreamChannel>& channelsInfo);
+  FlycapResult getCameraStats(FlyCapture2::CameraStats& cameraStats);
+
 
 protected:
   FlyCapture2::CameraBase& getCamera() const override;

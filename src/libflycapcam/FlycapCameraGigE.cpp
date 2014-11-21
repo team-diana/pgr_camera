@@ -77,6 +77,7 @@ void FlycapCameraGigE::start()
     std::cerr << "Unexpected state during start(): " << state;
   }
   camera->StartCapture();
+
   state = CAPTURING;
 }
 
@@ -191,6 +192,54 @@ FlycapResult FlycapCameraGigE::setPacketResendEnabled(bool enabled)
   stopRunFunctionRestartHelper([&]() {
     error =camera->SetGigEConfig(&config);
   });
+
+  return FlycapResult(error);
+}
+
+FlycapResult FlycapCameraGigE::getAvailableGigEPacketSize(unsigned int& packetSize)
+{
+  Error error;
+
+  stopRunFunctionRestartHelper([&]() {
+    error =camera->DiscoverGigEPacketSize(&packetSize);
+  });
+
+  return FlycapResult(error);
+}
+
+FlycapResult FlycapCameraGigE::getGigEChannelsInfo(std::vector< GigEStreamChannel >& channelsInfo)
+{
+  Error error;
+  channelsInfo.clear();
+
+  unsigned int numOfChannels;
+  if((error = camera->GetNumStreamChannels(&numOfChannels)) == PGRERROR_OK) {
+     std::cout << " number of channels is " << numOfChannels << std::endl;
+     for(int i = 0; i << numOfChannels; i++) {
+       GigEStreamChannel channelInfo;
+       if((error = camera->GetGigEStreamChannelInfo(i, &channelInfo)) == PGRERROR_OK) {
+          channelsInfo.push_back(channelInfo);
+       } else {
+          std::cerr << "error while retriving info for channel " << i <<
+            " : " << error.GetDescription() << std::endl;
+         channelsInfo.clear();
+         break;
+      }
+    }
+  }
+
+  return FlycapResult(error);
+}
+
+FlycapResult FlycapCameraGigE::getCameraStats(CameraStats& cameraStats)
+{
+  Error error;
+
+  error = camera->GetStats(&cameraStats);
+
+  if(error != PGRERROR_OK) {
+    std::cerr << "Error while getting camera stats" << std::endl;
+  }
 
   return FlycapResult(error);
 }
