@@ -11,4 +11,10 @@ std::string guidToString(const FlyCapture2::PGRGuid& guid) {
   return std::string(guidString);
 }
 
+bool operator!(const FlycapResult& result)
+{
+  return !(bool)result;
+}
+
+
 }

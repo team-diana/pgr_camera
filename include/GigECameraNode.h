@@ -16,10 +16,13 @@ public:
   flycapcam::FlycapCamera* getFlycapCamera() const override;
 
 private:
+  ros::NodeHandle gigeNodeHandle;
   std::unique_ptr<flycapcam::FlycapCameraGigE> flycapCamera;
+  boost::recursive_mutex dynamicReconfigureGigEMutex;
   DynamicGigEReconfigureServer dynamicReconfigureServerGigECamera;
   virtual void initImpl();
   void configureGigE(pgr_camera::PgrGigECameraConfig &config, uint32_t level) ;
+  void updateDynamicReconfigureServerGigECamera();
 
 };
 

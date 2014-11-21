@@ -2,6 +2,7 @@
 #define PGR_TYPES
 
 #include <flycapture/Error.h>
+#include <flycapture/FlyCapture2.h>
 
 #include <team_diana_lib/strings/strings.h>
 
@@ -28,7 +29,9 @@ struct GigEPacketParams {
 class FlycapResult {
 
 public:
-  explicit FlycapResult(const FlyCapture2::Error& error) {
+  FlycapResult() = default;
+
+  FlycapResult(const FlyCapture2::Error& error) {
     this->error = error;
   }
 
@@ -36,10 +39,16 @@ public:
     return error;
   }
 
+  std::string getErrorDescription() const {
+    return error.GetDescription();
+  }
+
   operator bool() const
   {
       return error == FlyCapture2::PGRERROR_OK;
   }
+
+  friend bool operator! (const FlycapResult& result);
 
 private:
   FlyCapture2::Error error;

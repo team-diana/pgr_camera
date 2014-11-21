@@ -79,14 +79,15 @@ using namespace FlyCapture2;
 CameraNode::CameraNode(const ros::NodeHandle &nodeHandle) :
   nodeHandler(nodeHandle),
   imageTransport(nodeHandle),
-  cameraInfoManager(nodeHandle),
-  dynamicReconfigureServer(nodeHandle)
+  cameraInfoManager(nodeHandle)
+//   ,
+//   dynamicReconfigureServer(nodeHandle)
 {}
 
-DynamicReconfigureServer &CameraNode::getDynamicReconfigureServer()
-{
-  return dynamicReconfigureServer;
-}
+// DynamicReconfigureServer &CameraNode::getDynamicReconfigureServer()
+// {
+//   return dynamicReconfigureServer;
+// }
 
 void CameraNode::dynamicReconfigureCameraCallback(pgr_camera::PgrCameraConfig &config,  uint32_t level)
 {
@@ -112,8 +113,8 @@ void CameraNode::baseInit()
 
   cameraPublisher = imageTransport.advertiseCamera(cameraName, 1);
 
-  DynamicReconfigureServer::CallbackType f = boost::bind(&CameraNode::configure, this, _1, _2);
-  getDynamicReconfigureServer().setCallback(f);
+//   DynamicReconfigureServer::CallbackType f = boost::bind(&CameraNode::configure, this, _1, _2);
+//   getDynamicReconfigureServer().setCallback(f);
 
   ros_info("Setup done");
 }
@@ -122,7 +123,7 @@ void CameraNode::baseInit()
 void CameraNode::start()
 {
   ROS_INFO("Starting up camera");
-  getFlycapCamera()->start();
+//   getFlycapCamera()->start();
 }
 
 void CameraNode::stop()
@@ -172,12 +173,14 @@ bool CameraNode::processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &img
 void CameraNode::retrieveAndPublishFrame(ros::Time timestamp)
 {
   FlyCapture2::Image image;
+  getFlycapCamera()->start();
   flycapcam::FlycapResult result = getFlycapCamera()->retrieveFrame(image);
   if(result) {
-      publishImage(image, timestamp);
+    publishImage(image, timestamp);
   } else {
     ros_error (toString("error while retrieving frame: ", result.getError().GetDescription()) );
   }
+  getFlycapCamera()->stop();
 }
 
 void CameraNode::publishImage(FlyCapture2::Image& frame, ros::Time timestamp)

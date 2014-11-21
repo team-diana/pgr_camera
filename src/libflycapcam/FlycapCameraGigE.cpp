@@ -135,6 +135,19 @@ FlycapResult FlycapCameraGigE::getPacketDelay(unsigned int& packetDelay) const
   return FlycapResult(error);
 }
 
+FlycapResult FlycapCameraGigE::isPacketResendEnabled(bool& enabled)
+{
+  Error error;
+  GigEConfig config;
+
+  if((error = camera->GetGigEConfig(&config)) == PGRERROR_OK) {
+    enabled = config.enablePacketResend;
+  }
+
+  return FlycapResult(error);
+}
+
+
 FlycapResult FlycapCameraGigE::setPacketSize(unsigned int packetSize)
 {
 
@@ -165,6 +178,19 @@ FlycapResult FlycapCameraGigE::setPacketDelay(unsigned int packetDelay)
   };
 
   stopRunFunctionRestartHelper(setPacketDelayImpl);
+
+  return FlycapResult(error);
+}
+
+FlycapResult FlycapCameraGigE::setPacketResendEnabled(bool enabled)
+{
+  Error error;
+  GigEConfig config;
+  config.enablePacketResend = enabled;
+
+  stopRunFunctionRestartHelper([&]() {
+    error =camera->SetGigEConfig(&config);
+  });
 
   return FlycapResult(error);
 }

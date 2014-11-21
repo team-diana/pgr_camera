@@ -43,7 +43,7 @@ public:
   CameraNode(const ros::NodeHandle &nodeHandle);
   virtual ~CameraNode() = 0;
 
-  DynamicReconfigureServer& getDynamicReconfigureServer();
+//   DynamicReconfigureServer& getDynamicReconfigureServer();
 
   void retrieveAndPublishFrame(ros::Time timestamp);
   void publishImage(FlyCapture2::Image& frame, ros::Time timestamp);
@@ -71,7 +71,7 @@ protected:
   image_transport::CameraPublisher cameraPublisher;
   polled_camera::PublicationServer publicationServer;
   camera_info_manager::CameraInfoManager cameraInfoManager;
-  DynamicReconfigureServer dynamicReconfigureServer;
+//   DynamicReconfigureServer dynamicReconfigureServer;
   sensor_msgs::Image sensorImage;
   sensor_msgs::CameraInfo cameraInfo;
 };
