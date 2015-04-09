@@ -60,7 +60,7 @@ void GigECameraNode::printGigEInfo()
     cout << "\tnumber of channels: " << channelsInfo.size();
     for(const GigEStreamChannel& chanInfo : channelsInfo) {
       cout << "\tChannel Info: " << endl;
-      cout << "\t\t destination ip: " << iterableToString(chanInfo.destinationIpAddress.octets, ":");
+      //cout << "\t\t destination ip: " << iterableToString(chanInfo.destinationIpAddress.octets, ":");
       cout << "\t\tsourcePort: " << chanInfo.sourcePort << endl;
       cout << "\t\thost port: " << chanInfo.hostPort << endl;
       cout << "\t\tinterPacketDelay: " << chanInfo.interPacketDelay << endl;
@@ -71,7 +71,7 @@ void GigECameraNode::printGigEInfo()
     cerr << "Unable to get channels info: " << result.getErrorDescription() << endl;
   }
 
-  cout << endl;
+  cout << "Print GigE info done" << endl;
 }
 
 void GigECameraNode::printCameraStats()
@@ -88,7 +88,7 @@ void GigECameraNode::printCameraStats()
     out << "\t N. image dropped: " << stats.imageDropped << endl;
     out << "\t N. packet-resend received: " << stats.numResendPacketsReceived << endl;
     out << "\t N. packet-resend requested: " << stats.numResendPacketsRequested << endl;
-    out << "\t N. failed image transmission: " << stats.imageXmitFailed << endl;
+    out << "\t N. failed image transmission: " << (stats.imageXmitFailed - (unsigned int)(-1))<< endl;
     out << "\t N. port errors: " << stats.portErrors << endl;
     out << "\t uptime (seconds): " << stats.timeSinceInitialization << endl;
     out << "\t seconds from last bus reset: " << stats.timeSinceBusReset << endl;
@@ -101,10 +101,20 @@ void GigECameraNode::printCameraStats()
 
 }
 
+void GigECameraNode::setPrintOnNewFrame(bool enabled)
+{
+  flycapCamera->printOnNewFrame = enabled;
+}
+
 void GigECameraNode::initImpl()
 {
   DynamicGigEReconfigureServer::CallbackType f = boost::bind(&GigECameraNode::configureGigE, this, _1, _2);
   camGigEReconfigureServer.setCallback(f);
+
+  showInfoSubscriber = nodeHandler.subscribe<std_msgs::String>("show_info", 1000, [this](const std_msgs::String::ConstPtr& ) {
+    this->printGigEInfo();
+    this->printCameraStats();
+  });
 
   updateDynamicReconfigureServerGigECamera();
 }

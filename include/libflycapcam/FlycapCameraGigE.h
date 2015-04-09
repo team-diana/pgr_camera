@@ -78,6 +78,7 @@ public:
   void start() override;
   void stop() override;
 
+  bool isCapturing() override;
   FlycapResult retrieveFrame(FlyCapture2::Image& image) override;
 
   FlycapResult getPacketSize(unsigned int& packetSize) const;
@@ -96,8 +97,8 @@ public:
 protected:
   FlyCapture2::CameraBase& getCamera() const override;
 
-private:
-  void stopRunFunctionRestartHelper(std::function<void()> fun);
+public:
+  bool printOnNewFrame;
 
 private:
   std::unique_ptr<FlyCapture2::GigECamera> camera;

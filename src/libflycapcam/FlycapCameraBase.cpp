@@ -147,12 +147,19 @@ FlycapResult FlycapCameraBase::setFrameRate(bool automatic, double value)
   Property prop;
   Error error;
 
-  prop.type = FlyCapture2::SHUTTER;
+  prop.type = FlyCapture2::FRAME_RATE;
   prop.autoManualMode = automatic;
   prop.absValue = (float)value;
   prop.onOff = true;
+  prop.absControl = true;
 
-  error = getCamera().SetProperty(&prop);
+  auto f = [&]() {
+    sleep(1);
+    error = getCamera().SetProperty(&prop);
+    sleep(1);
+  };
+
+  stopRunFunctionRestartHelper(f);
 
   return FlycapResult(error);
 }
@@ -307,6 +314,20 @@ InterfaceType FlycapCameraBase::getInterfaceType() const
 SerialNumber FlycapCameraBase::getSerialNumber() const
 {
   return serialNumber;
+}
+
+void FlycapCameraBase::stopRunFunctionRestartHelper(std::function< void() > fun)
+{
+  std::lock_guard<std::mutex> lock(cameraMutex);
+
+  if(isCapturing()) {
+    // TODO: if needed, add some sleep between functions.
+    stop();
+    fun();
+    start();
+  } else {
+    fun();
+  }
 }
 
 }

@@ -89,7 +89,9 @@ CameraNode::CameraNode(const ros::NodeHandle &nodeHandle) :
 void CameraNode::dynamicReconfigureCameraCallback(pgr_camera::PgrCameraConfig &config,  uint32_t level)
 {
   ros_info("Reconfigure request received");
-  loadIntrinsics(config.intrinsics_ini, getFlycapCamera()->getSerialNumber());
+  lock_guard<boost::recursive_mutex> lock(camReconfigureMutex);
+  configure(config, level);
+  ros_info("Reconfigure request end");
 }
 
 void CameraNode::printResultErrorMessageIfAny(const flycapcam::FlycapResult& result, string msg)
@@ -106,20 +108,22 @@ CameraNode::~CameraNode()
 
 void CameraNode::init()
 {
+  ros_info("Setting up camera");
   baseInit();
   this->initImpl();
 }
 
 void CameraNode::baseInit()
 {
-  ros_info("Setting up camera");
-
   cameraPublisher = imageTransport.advertiseCamera("image_raw", 1);
 
   DynamicReconfigureServer::CallbackType f = boost::bind(&CameraNode::configure, this, _1, _2);
   camReconfigureServer.setCallback(f);
 
-  ros_info("Setup done");
+  getFlycapCamera()->initCam();
+  loadIntrinsics("", getFlycapCamera()->getSerialNumber());
+
+  ros_info("Base Setup done");
 }
 
 void CameraNode::updateReconfigureServer()
@@ -214,6 +218,7 @@ bool CameraNode::processFrame(FlyCapture2::Image *frame, sensor_msgs::Image &img
   }
   cam_info.height = img.height;
   cam_info.width = img.width;
+  img.header.frame_id = cam_info.header.frame_id = "stereo";
 
   return true;
 }
@@ -250,14 +255,13 @@ void CameraNode::retrieveAndPublishFrameStartAndStop(ros::Time timestamp)
 void CameraNode::publishImage(FlyCapture2::Image& frame, ros::Time timestamp)
 {
   if(processFrame(&frame, sensorImage, cameraInfo, timestamp)) {
-    ROS_INFO("Publish image, timestamp is %lu",  timestamp.toNSec());
+//     ROS_INFO("Publish image, timestamp is %lu",  timestamp.toNSec());
     cameraPublisher.publish(sensorImage, cameraInfo, timestamp);
   }
 }
 
 void CameraNode::configure(pgr_camera::PgrCameraConfig& config, uint32_t level)
 {
-  lock_guard<boost::recursive_mutex> lock(camReconfigureMutex);
   FlycapResult result;
 
   result = getFlycapCamera()->setFrameRate(false, config.frame_rate);
@@ -278,6 +282,7 @@ void CameraNode::configure(pgr_camera::PgrCameraConfig& config, uint32_t level)
     ros_error(toString("Unknown grab mode: ", config.grab_mode));
     grabMode = FlyCapture2::DROP_FRAMES;
   }
+
   result = getFlycapCamera()->setGrabMode(grabMode);
   printResultErrorMessageIfAny(result, "Unable to set grab model");
 

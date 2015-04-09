@@ -49,6 +49,7 @@ FlycapCameraGigE::FlycapCameraGigE(std::unique_ptr< FlyCapture2::GigECamera > ca
                                    SerialNumber serialNumber,
                                    FlyCapture2::InterfaceType interfaceType)
   : FlycapCameraBase(guid, serialNumber, interfaceType),
+    printOnNewFrame(false),
     state(NOT_INITIALIZED)
 {
   this->camera = std::move(camera);
@@ -74,7 +75,7 @@ void FlycapCameraGigE::initCam()
 void FlycapCameraGigE::start()
 {
   if(state != READY) {
-    std::cerr << "Unexpected state during start(): " << state;
+    std::cerr << "ERROR: Unexpected state during start(): " << state << std::endl;
   }
   camera->StartCapture();
 
@@ -84,16 +85,23 @@ void FlycapCameraGigE::start()
 void FlycapCameraGigE::stop()
 {
   if(state != CAPTURING) {
-    std::cerr << "Unexpected state during start(): " << state;
+    std::cerr << "ERROR: Unexpected state during stop(): " << state << std::endl;
   }
-  camera->StartCapture();
+  camera->StopCapture();
   state = READY;
+}
+
+bool FlycapCameraGigE::isCapturing()
+{
+  return state == CAPTURING;
 }
 
 FlycapResult FlycapCameraGigE::retrieveFrame(Image& image)
 {
   Error error;
-  std::cout << toString("retrieving frame of camera ", getSerialNumber()) << std::endl;
+  if(printOnNewFrame) {
+    std::cout << toString("retrieving frame of camera ", getSerialNumber()) << std::endl;
+  }
 
   error = camera->RetrieveBuffer(&image);
 
@@ -101,8 +109,10 @@ FlycapResult FlycapCameraGigE::retrieveFrame(Image& image)
     std::cerr << (Td::toString("Error for camera: ", getSerialNumber()
                                , " : " , error.GetDescription())) << std::endl;
   } else {
-    std::cout << (Td::toString("Retrieve Buffer Ok for camera: ", getSerialNumber()
-                               )) << std::endl;
+    if(printOnNewFrame) {
+      std::cout << (Td::toString("Retrieve Buffer Ok for camera: ", getSerialNumber()
+                                  )) << std::endl;
+    }
   }
 
   return FlycapResult(error);
@@ -187,6 +197,7 @@ FlycapResult FlycapCameraGigE::setPacketResendEnabled(bool enabled)
 {
   Error error;
   GigEConfig config;
+  camera->GetGigEConfig(&config);
   config.enablePacketResend = enabled;
 
   stopRunFunctionRestartHelper([&]() {
@@ -214,8 +225,7 @@ FlycapResult FlycapCameraGigE::getGigEChannelsInfo(std::vector< GigEStreamChanne
 
   unsigned int numOfChannels;
   if((error = camera->GetNumStreamChannels(&numOfChannels)) == PGRERROR_OK) {
-     std::cout << " number of channels is " << numOfChannels << std::endl;
-     for(int i = 0; i << numOfChannels; i++) {
+     for(unsigned int i = 0; i < numOfChannels; i++) {
        GigEStreamChannel channelInfo;
        if((error = camera->GetGigEStreamChannelInfo(i, &channelInfo)) == PGRERROR_OK) {
           channelsInfo.push_back(channelInfo);
@@ -244,18 +254,6 @@ FlycapResult FlycapCameraGigE::getCameraStats(CameraStats& cameraStats)
   return FlycapResult(error);
 }
 
-void FlycapCameraGigE::stopRunFunctionRestartHelper(std::function< void() > fun)
-{
-  std::lock_guard<std::mutex> lock(cameraMutex);
 
-  if(state == CAPTURING) {
-    // TODO: if needed, add some sleep between functions.
-    stop();
-    fun();
-    start();
-  } else {
-    fun();
-  }
-}
 
 }

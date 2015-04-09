@@ -70,16 +70,16 @@ int main(int argc, char **argv)
 
   std::vector<unsigned int> cameraSerialToStart;
   std::vector<unsigned int> cameraSerialToSync;
-  bool startAndStop, printGigEInfo, printDebugInfo, enablePublish;
+  bool startAndStop, printGigEInfo, printDebugInfo, enablePublish, printOnNewFrame;
 
   if(!parseCommandLine(argc,  argv,  cameraSerialToStart,  cameraSerialToSync, startAndStop,
-    printGigEInfo, printDebugInfo, enablePublish)) {
+    printGigEInfo, printDebugInfo, enablePublish, printOnNewFrame)) {
     return -1;
   }
 
   if(printGigEInfo) {
     showGigEInfo(cameraSerialToStart);
-    exit(0);
+    return 0;
   }
 
   try {
@@ -97,6 +97,7 @@ int main(int argc, char **argv)
 //       }
 
       pn->publishEnabled = enablePublish;
+      pn->setPrintOnNewFrame(printOnNewFrame);
 
       if(startAndStop) {
         pn->setStartAndStopEnabled(true);
@@ -128,6 +129,7 @@ int main(int argc, char **argv)
       }
     }
 
+    ros::spinOnce();
 
     cycle++;
   }

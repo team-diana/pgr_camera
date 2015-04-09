@@ -9,7 +9,8 @@ using namespace Td;
 using namespace std;
 
 bool parseCommandLine(int argc, char* const * argv, std::vector<unsigned int>& serialsToStart,
-                      std::vector<unsigned int>& serialsToSync, bool& startAndStop, bool& printGigEInfo, bool& printDebugInfo, bool& enablePublish)
+                      std::vector<unsigned int>& serialsToSync, bool& startAndStop,
+                      bool& printGigEInfo, bool& printDebugInfo, bool& enablePublish, bool& printOnNewFrame)
 {
   using namespace boost::program_options;
   try {
@@ -23,6 +24,7 @@ bool parseCommandLine(int argc, char* const * argv, std::vector<unsigned int>& s
     ("start-and-stop,P", value<bool>()->default_value(false)->implicit_value(true), "start and stop each camera for every frame")
     ("print-gige-info,G", value<bool>()->default_value(false)->implicit_value(true), "reports information about the GigE network")
     ("disable-publishing,D", value<bool>()->default_value(false)->implicit_value(true), "disable image publishing for debug purpose")
+    ("print-on-new-frame,F", value<bool>()->default_value(false)->implicit_value(true), "print a msg for each new frame")
     ("debug,d", value<bool>()->default_value(false)->implicit_value(true), "print debug information during execution");
 
     variables_map varsMap;
@@ -56,6 +58,8 @@ bool parseCommandLine(int argc, char* const * argv, std::vector<unsigned int>& s
 
       printGigEInfo = boost::any_cast<bool>(varsMap["print-gige-info"].value());
       printDebugInfo = boost::any_cast<bool>(varsMap["debug"].value());
+      startAndStop = boost::any_cast<bool>(varsMap["start-and-stop"].value());
+      printOnNewFrame = boost::any_cast<bool>(varsMap["print-on-new-frame"].value());
       enablePublish = !boost::any_cast<bool>(varsMap["disable-publishing"].value());
 
       notify(varsMap);

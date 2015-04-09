@@ -69,6 +69,7 @@ public:
   void start() override = 0;
   void stop() override = 0;
 
+  virtual bool isCapturing() = 0;
   FlycapResult retrieveFrame(FlyCapture2::Image& image) override = 0;
 
   FlycapResult getExposure(unsigned int& value) const override;
@@ -101,6 +102,7 @@ public:
 
 protected:
   FlyCapture2::CameraBase& getCamera() const override = 0;
+  void stopRunFunctionRestartHelper(std::function<void()> fun);
 
   std::mutex cameraMutex;
 

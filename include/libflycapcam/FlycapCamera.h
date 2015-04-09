@@ -57,6 +57,7 @@ public:
   virtual void start() = 0;
   virtual void stop() = 0;
 
+  virtual bool isCapturing() = 0;
   virtual FlycapResult retrieveFrame(FlyCapture2::Image& image) = 0;
 
   virtual FlycapResult getExposure(unsigned int& value) const = 0;
