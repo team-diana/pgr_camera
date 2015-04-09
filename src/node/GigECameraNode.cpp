@@ -62,7 +62,7 @@ void GigECameraNode::printGigEInfo()
       cout << "\tChannel Info: " << endl;
       //cout << "\t\t destination ip: " << iterableToString(chanInfo.destinationIpAddress.octets, ":");
       cout << "\t\tsourcePort: " << chanInfo.sourcePort << endl;
-      cout << "\t\thost port: " << chanInfo.hostPort << endl;
+      //cout << "\t\thost port: " << chanInfo.hostPort << endl;
       cout << "\t\tinterPacketDelay: " << chanInfo.interPacketDelay << endl;
       cout << "\t\tpacketSize: " << chanInfo.packetSize << endl;
       cout << "\t\tnetworkInterfaceIndex: " << chanInfo.networkInterfaceIndex << endl;
