@@ -19,6 +19,11 @@ GigECameraNode::GigECameraNode(const ros::NodeHandle& nodeHandle, std::unique_pt
  camGigEReconfigureServer(camGigEReconfigureMutex, gigeNodeHandle)
 {
   this->flycapCamera = std::move(flycapCamera);
+
+//   double framerate = 20;
+//   nodeHandle.param("framerate", framerate, framerate);
+//   ros_info(toString("setting initial framerate to ", framerate));
+//   this->flycapCamera->setFrameRate(framerate);
 }
 
 
@@ -27,14 +32,14 @@ void GigECameraNode::configureGigE(pgr_camera::PgrGigECameraConfig& config, uint
   std::lock_guard<boost::recursive_mutex> lock(camGigEReconfigureMutex);
   FlycapResult result;
 
-//   result = flycapCamera->setPacketDelay(config.packet_delay);
-//   printResultErrorMessageIfAny(result, "Unable to set packet delay");
+  result = flycapCamera->setPacketDelay(config.packet_delay);
+  printResultErrorMessageIfAny(result, "Unable to set packet delay");
 
-//   result = flycapCamera->setPacketSize(config.packet_size);
-//   printResultErrorMessageIfAny(result, "Unable to set packet size");
+  result = flycapCamera->setPacketSize(config.packet_size);
+  printResultErrorMessageIfAny(result, "Unable to set packet size");
 
-//   result = flycapCamera->setPacketResendEnabled(config.packet_resend);
-//   printResultErrorMessageIfAny(result, "Unable to set packet resend");
+  result = flycapCamera->setPacketResendEnabled(config.packet_resend);
+  printResultErrorMessageIfAny(result, "Unable to set packet resend");
 }
 
 flycapcam::FlycapCamera* GigECameraNode::getFlycapCamera() const
@@ -124,28 +129,28 @@ void GigECameraNode::updateDynamicReconfigureServerGigECamera()
   pgr_camera::PgrGigECameraConfig config;
   FlycapResult result;
 
-//   unsigned int packet_delay;
-//   if(result = flycapCamera->getPacketDelay(packet_delay)) {
-//     config.packet_delay = static_cast<unsigned int>(packet_delay);
-//   } else {
-//     ros_error(result.getErrorDescription());
-//   }
-//
-//   unsigned int packet_size;
-//   if(result = flycapCamera->getPacketSize(packet_size)) {
-//     config.packet_size = static_cast<unsigned int>(packet_size);
-//   } else {
-//     ros_error(result.getErrorDescription());
-//   }
-//
-//   bool packet_resend_enabled;
-//   if(result = flycapCamera->isPacketResendEnabled(packet_resend_enabled)) {
-//     config.packet_resend = packet_resend_enabled;
-//   } else {
-//     ros_error(result.getErrorDescription());
-//   }
-//
-//   std::lock_guard<boost::recursive_mutex> lock(camGigEReconfigureMutex);
-//   camGigEReconfigureServer.updateConfig(config);
+  unsigned int packet_delay;
+  if(result = flycapCamera->getPacketDelay(packet_delay)) {
+    config.packet_delay = static_cast<unsigned int>(packet_delay);
+  } else {
+    ros_error(result.getErrorDescription());
+  }
+
+  unsigned int packet_size;
+  if(result = flycapCamera->getPacketSize(packet_size)) {
+    config.packet_size = static_cast<unsigned int>(packet_size);
+  } else {
+    ros_error(result.getErrorDescription());
+  }
+
+  bool packet_resend_enabled;
+  if(result = flycapCamera->isPacketResendEnabled(packet_resend_enabled)) {
+    config.packet_resend = packet_resend_enabled;
+  } else {
+    ros_error(result.getErrorDescription());
+  }
+
+  std::lock_guard<boost::recursive_mutex> lock(camGigEReconfigureMutex);
+  camGigEReconfigureServer.updateConfig(config);
 }
 

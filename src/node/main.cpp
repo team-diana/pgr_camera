@@ -53,6 +53,7 @@ void showGigEInfo(const std::vector<unsigned int>& serials) {
 bool running;
 
 void sigintHandler(int) {
+  ros_info("Stop node after sigint request");
   running = false;
 }
 
@@ -117,24 +118,28 @@ int main(int argc, char **argv)
   running = true;
 
   unsigned long cycle = 0;
-  while(running) {
+  while(running && ros::ok()) {
     ros::Time timestamp = ros::Time::now();
     for(std::shared_ptr<GigECameraNode>& cam : cameraNodes) {
       usleep(3000);
       cam->retrieveAndPublishFrame(timestamp);
 
-      if(printDebugInfo && (cycle % 20)) {
+      if(printDebugInfo && (cycle % 20 == 0)) {
         cam->printGigEInfo();
         cam->printCameraStats();
       }
     }
 
-    ros::spinOnce();
+    if((cycle % 2) == 0) {
+      ros::spinOnce();
+    }
 
     cycle++;
   }
+  ros_info("Exited after last frame");
 
   for(std::shared_ptr<GigECameraNode>& cam : cameraNodes) {
+    ros_info(toString("Stopping camera", cam->getFlycapCamera()->getSerialNumber()));
     cam->stop();
   }
 

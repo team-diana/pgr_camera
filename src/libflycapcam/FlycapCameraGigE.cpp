@@ -35,6 +35,7 @@
 #include "libflycapcam/FlycapCameraGigE.h"
 
 #include <team_diana_lib/strings/strings.h>
+#include <team_diana_lib/logging/logging.h>
 
 #include <mutex>
 #include <functional>
@@ -167,8 +168,10 @@ FlycapResult FlycapCameraGigE::setPacketSize(unsigned int packetSize)
   property.propType = FlyCapture2::PACKET_SIZE;
   property.value = packetSize;
 
+  ros_info(toString("set packet size to: ", packetSize));
+
   auto setPacketDelayImpl = [&]() {
-//     error = camera->SetGigEProperty(&property);
+    error = camera->SetGigEProperty(&property);
   };
 
   stopRunFunctionRestartHelper(setPacketDelayImpl);
@@ -184,8 +187,9 @@ FlycapResult FlycapCameraGigE::setPacketDelay(unsigned int packetDelay)
   property.propType = PACKET_DELAY;
   property.value = packetDelay;
 
+  ros_info(toString("set packet delay to: ", packetDelay));
   auto setPacketDelayImpl = [&]() {
-//     error = camera->SetGigEProperty(&property);
+    error = camera->SetGigEProperty(&property);
   };
 
   stopRunFunctionRestartHelper(setPacketDelayImpl);
@@ -200,8 +204,10 @@ FlycapResult FlycapCameraGigE::setPacketResendEnabled(bool enabled)
   camera->GetGigEConfig(&config);
   config.enablePacketResend = enabled;
 
+  ros_info(toString("set packet resend enable: ", enabled));
+
   stopRunFunctionRestartHelper([&]() {
-//     error =camera->SetGigEConfig(&config);
+    error =camera->SetGigEConfig(&config);
   });
 
   return FlycapResult(error);

@@ -10,7 +10,7 @@ SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -lflycapture -std=c++11 -Wall" )
 set(FLYCAPTURE_LIBRARIES "/usr/lib/libflycapture.so")
 set(FLYCAPTURE_INCLUDE_PATH "/usr/include/flycapture")
 
-include_directories(../../include/ ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_PATH})
+include_directories(../../include/ ${catkin_INCLUDE_DIRS} ${FLYCAPTURE_INCLUDE_PATH} ${Boost_INCLUDE_DIRS})
 
 generate_dynamic_reconfigure_options(
 	cfg/PgrCamera.cfg

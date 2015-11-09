@@ -35,13 +35,14 @@
 #include "libflycapcam/FlycapCameraBase.h"
 
 namespace flycapcam {
-  using namespace FlyCapture2;
+using namespace FlyCapture2;
+using namespace std;
 
 FlycapCameraBase::FlycapCameraBase(FlyCapture2::PGRGuid guid, SerialNumber serialNumber, FlyCapture2::InterfaceType interfaceType)
 {
-  this->guid = guid;
-  this->serialNumber = serialNumber;
-  this->interfaceType = interfaceType;
+    this->guid = guid;
+    this->serialNumber = serialNumber;
+    this->interfaceType = interfaceType;
 }
 
 FlycapCameraBase::~FlycapCameraBase()
@@ -51,283 +52,300 @@ FlycapCameraBase::~FlycapCameraBase()
 
 FlycapResult FlycapCameraBase::getExposure(unsigned int& value) const
 {
-  Property prop;
-  Error error;
-  prop.type = AUTO_EXPOSURE;
-  if((error = getCamera().GetProperty(&prop)) == PGRERROR_OK) {
-    value = prop.valueA;
-  }
+    Property prop;
+    Error error;
+    prop.type = AUTO_EXPOSURE;
+    if((error = getCamera().GetProperty(&prop)) == PGRERROR_OK) {
+        value = prop.valueA;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::getGain(double& value) const
 {
-  Property prop;
-  Error error;
-  prop.type = GAIN;
-  if((error = getCamera().GetProperty(&prop)) == PGRERROR_OK) {
-    value = prop.absValue;
-  }
+    Property prop;
+    Error error;
+    prop.type = GAIN;
+    if((error = getCamera().GetProperty(&prop)) == PGRERROR_OK) {
+        value = prop.absValue;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::getShutter(double& value) const
 {
-  Property prop;
-  Error error;
-  prop.type = SHUTTER;
-  if((error = getCamera().GetProperty(&prop)) == PGRERROR_OK) {
-    value = prop.absValue;
-  }
+    Property prop;
+    Error error;
+    prop.type = SHUTTER;
+    if((error = getCamera().GetProperty(&prop)) == PGRERROR_OK) {
+        value = prop.absValue;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::getFrameRate(double& value) const
 {
-  Property prop;
-  Error error;
-  prop.type = FlyCapture2::FRAME_RATE;
-  if((error = getCamera().GetProperty(&prop)) == PGRERROR_OK) {
-    value = prop.absValue;
-  }
+    Property prop;
+    Error error;
+    prop.type = FlyCapture2::FRAME_RATE;
+    if((error = getCamera().GetProperty(&prop)) == PGRERROR_OK) {
+        value = prop.absValue;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::setExposure(bool automatic, bool onoff, unsigned int value)
 {
-  Property prop;
-  Error error;
+    Property prop;
+    Error error;
 
-  prop.type = AUTO_EXPOSURE;
-  prop.autoManualMode = automatic;
-  prop.onOff = onoff;
-  prop.valueA = value;
+    prop.type = AUTO_EXPOSURE;
+    prop.autoManualMode = automatic;
+    prop.onOff = onoff;
+    prop.valueA = value;
 
-  error = getCamera().SetProperty(&prop);
+    error = getCamera().SetProperty(&prop);
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::setGain(bool automatic, double value)
 {
-  Property prop;
-  Error error;
+    Property prop;
+    Error error;
 
-  prop.type = GAIN;
-  prop.autoManualMode = automatic;
-  prop.absValue = (float)value;
-  prop.onOff = true;
+    prop.type = GAIN;
+    prop.autoManualMode = automatic;
+    prop.absValue = (float)value;
+    prop.onOff = true;
 
-  error = getCamera().SetProperty(&prop);
+    error = getCamera().SetProperty(&prop);
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::setShutter(bool automatic, double value)
 {
-  Property prop;
-  Error error;
+    Property prop;
+    Error error;
 
-  prop.type = FlyCapture2::SHUTTER;
-  prop.autoManualMode = automatic;
-  prop.absValue = (float)value;
-  prop.onOff = true;
+    prop.type = FlyCapture2::SHUTTER;
+    prop.autoManualMode = automatic;
+    prop.absValue = (float)value;
+    prop.onOff = true;
 
-  error = getCamera().SetProperty(&prop);
+    error = getCamera().SetProperty(&prop);
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::setFrameRate(bool automatic, double value)
 {
-  Property prop;
-  Error error;
+    Property prop;
+    Error error;
 
-  prop.type = FlyCapture2::FRAME_RATE;
-  prop.autoManualMode = automatic;
-  prop.absValue = (float)value;
-  prop.onOff = true;
-  prop.absControl = true;
+    prop.type = FlyCapture2::FRAME_RATE;
+    prop.autoManualMode = automatic;
+    prop.absValue = (float)value;
+    prop.onOff = true;
+    prop.absControl = true;
 
-  auto f = [&]() {
-    sleep(1);
-    error = getCamera().SetProperty(&prop);
-    sleep(1);
-  };
+    auto f = [&]() {
+        sleep(1);
+        error = getCamera().SetProperty(&prop);
+        sleep(1);
+    };
 
-  stopRunFunctionRestartHelper(f);
+    std::cout << "Setting framerate to " << value << std::endl;
+    stopRunFunctionRestartHelper(f);
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::getBandwidthAllocation(FlyCapture2::BandwidthAllocation& bandwidthAllocation) const
 {
-  FC2Config config;
-  Error error;
+    FC2Config config;
+    Error error;
 
-  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
-    bandwidthAllocation = config.bandwidthAllocation;
-  }
+    if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+        bandwidthAllocation = config.bandwidthAllocation;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::getAsyncBusSpeed(BusSpeed& busSpeed) const
 {
-  FC2Config config;
-  Error error;
+    FC2Config config;
+    Error error;
 
-  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
-    busSpeed = config.asyncBusSpeed;
-  }
+    if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+        busSpeed = config.asyncBusSpeed;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::getGrabMode(GrabMode& grabMode) const
 {
-  FC2Config config;
-  Error error;
+    FC2Config config;
+    Error error;
 
-  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
-    grabMode = config.grabMode;
-  }
+    if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+        grabMode = config.grabMode;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 
 FlycapResult FlycapCameraBase::getGrabTimeout(int& grabTimeout) const
 {
-  FC2Config config;
-  Error error;
+    FC2Config config;
+    Error error;
 
-  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
-    grabTimeout = config.grabTimeout;
-  }
+    if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+        grabTimeout = config.grabTimeout;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::getNumBuffers(unsigned int& numBuffers) const
 {
-  FC2Config config;
-  Error error;
+    FC2Config config;
+    Error error;
 
-  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
-    numBuffers = config.numBuffers;
-  }
+    if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+        numBuffers = config.numBuffers;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::isHighPerformanceRetrieveBufferEnabled(bool& enabled) const
 {
-  FC2Config config;
-  Error error;
+    FC2Config config;
+    Error error;
 
-  if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
-    enabled = config.highPerformanceRetrieveBuffer;
-  }
+    if(( error = getCamera().GetConfiguration(&config)) == PGRERROR_OK ) {
+        enabled = config.highPerformanceRetrieveBuffer;
+    }
 
-  return FlycapResult(error);
+    return FlycapResult(error);
 }
 
 FlycapResult FlycapCameraBase::updateConfigParameterHelper(std::function< FC2Config (const FC2Config&)> update)
 {
-  FC2Config config;
-  Error error;
+    FC2Config config;
+    Error error;
 
-  if((error = getCamera().GetConfiguration(&config)) != PGRERROR_OK) {
+    if((error = getCamera().GetConfiguration(&config)) != PGRERROR_OK) {
+        return FlycapResult(error);
+    }
+
+    FC2Config newConfig = update(config);
+
+    error = getCamera().SetConfiguration(&newConfig);
     return FlycapResult(error);
-  }
-
-  FC2Config newConfig = update(config);
-
-  error = getCamera().SetConfiguration(&newConfig);
-  return FlycapResult(error);
 }
 
 
 FlycapResult FlycapCameraBase::setBandwidthAllocation(BandwidthAllocation bandwidthAllocation)
 {
-  return updateConfigParameterHelper([bandwidthAllocation](FC2Config config) {
-    config.bandwidthAllocation = bandwidthAllocation;
-    return config;
-  });
+    return updateConfigParameterHelper([bandwidthAllocation](FC2Config config) {
+        config.bandwidthAllocation = bandwidthAllocation;
+        return config;
+    });
 }
 
 FlycapResult FlycapCameraBase::setAsyncBusSpeed(BusSpeed busSpeed)
 {
-  return updateConfigParameterHelper([busSpeed](FC2Config config) {
-    config.asyncBusSpeed = busSpeed;
-    return config;
-  });
+    return updateConfigParameterHelper([busSpeed](FC2Config config) {
+        config.asyncBusSpeed = busSpeed;
+        return config;
+    });
 }
 
 FlycapResult FlycapCameraBase::setGrabMode(GrabMode grabMode)
 {
-  return updateConfigParameterHelper([grabMode](FC2Config config) {
-    config.grabMode = grabMode;
-    return config;
-  });
+    std::cout << "Set grub mode to ";
+    switch(grabMode) {
+    case GrabMode::BUFFER_FRAMES:
+        std::cout << "buffer_frames";
+        break;
+    case GrabMode::DROP_FRAMES:
+        std::cout << "drop_frames";
+        break;
+    default:
+        std::cout << "unspecified";
+        break;
+    }
+    cout << endl;
+
+    return updateConfigParameterHelper([grabMode](FC2Config config) {
+        config.grabMode = grabMode;
+        return config;
+    });
 }
 
 FlycapResult FlycapCameraBase::setGrabTimeout(int grabTimeout)
 {
-  return updateConfigParameterHelper([grabTimeout](FC2Config config) {
-    config.grabTimeout = grabTimeout;
-    return config;
-  });
+    cout << "set grab timeout: " << grabTimeout << endl;
+    return updateConfigParameterHelper([grabTimeout](FC2Config config) {
+        config.grabTimeout = grabTimeout;
+        return config;
+    });
 }
 
 FlycapResult FlycapCameraBase::setHighPerformanceRetrieveBufferEnabled(bool enabled)
 {
-  return updateConfigParameterHelper([enabled](FC2Config config) {
-    config.highPerformanceRetrieveBuffer = enabled;
-    return config;
-  });
+    return updateConfigParameterHelper([enabled](FC2Config config) {
+        config.highPerformanceRetrieveBuffer = enabled;
+        return config;
+    });
 }
 
 FlycapResult FlycapCameraBase::setNumBuffers(int numBuffers)
 {
-  return updateConfigParameterHelper([numBuffers](FC2Config config) {
-    config.numBuffers = numBuffers;
-    return config;
-  });
+    cout << "set num buffers: " << numBuffers << endl;
+    return updateConfigParameterHelper([numBuffers](FC2Config config) {
+        config.numBuffers = numBuffers;
+        return config;
+    });
 }
 
 PGRGuid FlycapCameraBase::getGuid() const
 {
-  return guid;
+    return guid;
 }
 
 InterfaceType FlycapCameraBase::getInterfaceType() const
 {
-  return interfaceType;
+    return interfaceType;
 }
 
 SerialNumber FlycapCameraBase::getSerialNumber() const
 {
-  return serialNumber;
+    return serialNumber;
 }
 
 void FlycapCameraBase::stopRunFunctionRestartHelper(std::function< void() > fun)
 {
-  std::lock_guard<std::mutex> lock(cameraMutex);
+    std::lock_guard<std::mutex> lock(cameraMutex);
 
-  if(isCapturing()) {
-    // TODO: if needed, add some sleep between functions.
-    stop();
-    fun();
-    start();
-  } else {
-    fun();
-  }
+    if(isCapturing()) {
+        // TODO: if needed, add some sleep between functions.
+        stop();
+        fun();
+        start();
+    } else {
+        fun();
+    }
 }
 
 }
