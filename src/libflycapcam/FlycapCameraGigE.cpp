@@ -168,7 +168,7 @@ FlycapResult FlycapCameraGigE::setPacketSize(unsigned int packetSize)
   property.value = packetSize;
 
   auto setPacketDelayImpl = [&]() {
-    error = camera->SetGigEProperty(&property);
+//     error = camera->SetGigEProperty(&property);
   };
 
   stopRunFunctionRestartHelper(setPacketDelayImpl);
@@ -185,7 +185,7 @@ FlycapResult FlycapCameraGigE::setPacketDelay(unsigned int packetDelay)
   property.value = packetDelay;
 
   auto setPacketDelayImpl = [&]() {
-    error = camera->SetGigEProperty(&property);
+//     error = camera->SetGigEProperty(&property);
   };
 
   stopRunFunctionRestartHelper(setPacketDelayImpl);
@@ -201,7 +201,7 @@ FlycapResult FlycapCameraGigE::setPacketResendEnabled(bool enabled)
   config.enablePacketResend = enabled;
 
   stopRunFunctionRestartHelper([&]() {
-    error =camera->SetGigEConfig(&config);
+//     error =camera->SetGigEConfig(&config);
   });
 
   return FlycapResult(error);
