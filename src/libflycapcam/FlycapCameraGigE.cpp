@@ -147,6 +147,14 @@ FlycapResult FlycapCameraGigE::getPacketDelay(unsigned int& packetDelay) const
   return FlycapResult(error);
 }
 
+FlycapResult FlycapCameraGigE::getImagingMode(FlyCapture2::Mode& mode) const {
+  Error error;
+
+  error = camera->GetGigEImagingMode(&mode);
+
+  return FlycapResult(error);
+}
+
 FlycapResult FlycapCameraGigE::isPacketResendEnabled(bool& enabled)
 {
   Error error;
@@ -160,9 +168,21 @@ FlycapResult FlycapCameraGigE::isPacketResendEnabled(bool& enabled)
 }
 
 
+FlycapResult FlycapCameraGigE::setImagingMode(Mode mode) {
+  Error error;
+  GigEProperty property;
+  ros_info(toString("set imaging mode to: ", mode));
+
+  auto action = [&]() {
+    error = camera->SetGigEImagingMode(mode);
+  };
+  stopRunFunctionRestartHelper(action);
+
+  return FlycapResult(error);
+}
+
 FlycapResult FlycapCameraGigE::setPacketSize(unsigned int packetSize)
 {
-
   Error error;
   GigEProperty property;
   property.propType = FlyCapture2::PACKET_SIZE;

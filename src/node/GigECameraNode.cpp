@@ -38,6 +38,9 @@ void GigECameraNode::configureGigE(pgr_camera::PgrGigECameraConfig& config, uint
   result = flycapCamera->setPacketSize(config.packet_size);
   printResultErrorMessageIfAny(result, "Unable to set packet size");
 
+  result = flycapCamera->setImagingMode((FlyCapture2::Mode)config.imaging_mode);
+  printResultErrorMessageIfAny(result, "Unable to set imaging mode");
+
   result = flycapCamera->setPacketResendEnabled(config.packet_resend);
   printResultErrorMessageIfAny(result, "Unable to set packet resend");
 }
@@ -146,6 +149,13 @@ void GigECameraNode::updateDynamicReconfigureServerGigECamera()
   bool packet_resend_enabled;
   if(result = flycapCamera->isPacketResendEnabled(packet_resend_enabled)) {
     config.packet_resend = packet_resend_enabled;
+  } else {
+    ros_error(result.getErrorDescription());
+  }
+
+  Mode imagingMode;
+  if(result = flycapCamera->getImagingMode(imagingMode)) {
+    config.imaging_mode = (int)imagingMode;
   } else {
     ros_error(result.getErrorDescription());
   }

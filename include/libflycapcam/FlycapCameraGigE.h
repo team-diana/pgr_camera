@@ -83,8 +83,10 @@ public:
 
   FlycapResult getPacketSize(unsigned int& packetSize) const;
   FlycapResult getPacketDelay(unsigned int& packetDelay) const;
+  FlycapResult getImagingMode(FlyCapture2::Mode& mode) const;
   FlycapResult isPacketResendEnabled(bool& enabled);
 
+  FlycapResult setImagingMode(FlyCapture2::Mode mode);
   FlycapResult setPacketSize(unsigned int packetSize);
   FlycapResult setPacketDelay(unsigned int packetDelay);
   FlycapResult setPacketResendEnabled(bool enabled);

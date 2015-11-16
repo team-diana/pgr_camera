@@ -242,6 +242,10 @@ void CameraNode::retrieveAndPublishFrameImpl(ros::Time timestamp)
     }
   } else {
     ros_error(toString("error while retrieving frame: ", result.getError().GetDescription()));
+    if(result.getError() == FlyCapture2::PGRERROR_ISOCH_NOT_STARTED) {
+      getFlycapCamera()->stop();
+      getFlycapCamera()->start();
+    }
   }
 }
 
